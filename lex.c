@@ -80,9 +80,12 @@ char *lex_emit(lex *l) {
 
 	// allocate an extra byte for null termination
 	if ((copy = malloc(l->len + 1)) == NULL) {
+
+		// note the error
 		#ifdef DEBUG
 			err("allocation of emittable buffer failed: %s.", strerror(errno));
 		#endif
+
 		return NULL; // error
 	} else {
 		// using memcpy because memory does not overlap.
