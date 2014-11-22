@@ -154,7 +154,6 @@ void lex_state(lex *l) {
 }
 
 int main() {
-
 	lex *l = lex_init(10);
 	lex_state(l); // state machine loop.
 	lex_free(l);
