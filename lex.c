@@ -96,7 +96,7 @@ char *lex_emit(lex *l) {
 			return NULL; // error
 		} else {
 			copy[l->len] = '\0'; // null terminate
-			if (!lex_dump(l)) {
+			if (lex_dump(l)) {
 				return NULL; // error
 			}
 			return copy;
@@ -212,7 +212,7 @@ void *lex_all(lex *l) {
 		} else {
 			// ignores unknown characters
 			lex_next(l);
-			if (!lex_dump(l)) { return NULL; } // error
+			if (lex_dump(l)) { return NULL; } // error
 		}
 	}
 	return NULL;
