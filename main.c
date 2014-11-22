@@ -139,7 +139,7 @@ void *lex_all(lex *l) {
 		if (c == '>' || c == '<' || c == '+' || c == '-') {
 			return lex_gt;
 		} else {
-			lex_dump(l); // eat unknown
+			lex_next(); lex_dump(l); // eat unknown
 		}
 	}
 	return NULL;
