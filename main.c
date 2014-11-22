@@ -84,7 +84,7 @@ char *lex_emit(lex *l) {
 char lex_next(lex *l) {
 	if (l->len >= l->size) {
 		l->size *= 2;
-		realloc(l->lexed, l->size);
+		l->lexed = realloc(l->lexed, l->size);
 	}
 	if (l->llen > l->len) {
 		return l->lexed[l->len++];
