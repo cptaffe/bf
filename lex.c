@@ -140,9 +140,17 @@ void *lex_op(lex *l);
 // lexes operator characters, but does not handle loops.
 void *lex_op(lex *l) {
 
-	// check if the current character is an op.
 	char gc; // gotten char
-	if ((gc = lex_peek(l)) == EOF && !(gc == '>' || gc == '<' || gc == '+' || gc == '-')) {
+
+	// check if the current character is not an op or is an EOF.
+	// in either case, the program should not be here, error.
+	if ((gc = lex_peek(l)) == EOF || !(gc == '>' || gc == '<' || gc == '+' || gc == '-')) {
+
+		#ifdef DEBUG
+			// note that this error is occurring.
+			fprintf(stderr, "unknown character in lex_op: '%c'\n", gc);
+		#endif
+
 		// unrecoverable error, stop lexing.
 		return NULL;
 	} else {
@@ -152,13 +160,10 @@ void *lex_op(lex *l) {
 		lex_back(l);
 
 		#ifdef DEBUG
-		// get the current lex'd string from emit.
-		// scoped to prevent side effects.
-		{
+			// get the current lex'd string from emit.
 			char *msg = lex_emit(l);
 			printf("lexed: %s\n", msg);
 			free(msg);
-		}
 		#endif
 
 		// return to the default state.
