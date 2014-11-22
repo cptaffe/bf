@@ -3,15 +3,20 @@
 #define BF_LEX_H_
 
 typedef struct {
-	int fd;
+	FILE *file;
 	size_t size;
 	int len;
 	int llen; // lexed len
 	char *lexed;
 } lex;
 
-lex *lex_init(size_t sz, int fd);
+// allocate and initiate lexer
+lex *lex_init(size_t sz, FILE *file);
+
+// free lexer
 void lex_free(lex *l);
+
+// run lexer state machine
 void lex_state(lex *l);
 
 #endif // BF_LEX_H_

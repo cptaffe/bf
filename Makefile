@@ -1,7 +1,9 @@
 
-SRC = main.c lex.c
+CFLAGS+= -DDEBUG
+
+SRC = main.c lex.c bf.c
 OBJ = $(SRC:.c=.o)
-HDR = lex.h
+HDR = lex.h bf.h tok.h
 
 BIN = bf
 
@@ -11,3 +13,6 @@ all: $(BIN)
 $(BIN): $(OBJ)
 
 $(OBJ): $(HDR)
+
+clean:
+	rm $(BIN) $(OBJ)
