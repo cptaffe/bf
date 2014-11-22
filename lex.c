@@ -201,6 +201,8 @@ void *lex_op(lex *l) {
 	}
 }
 
+// default state function,
+// lexes the initial state and returns subsequent states.
 void *lex_all(lex *l) {
 	char c;
 	while ((c = lex_peek(l)) != EOF) {
