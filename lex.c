@@ -57,10 +57,12 @@ int lex_dump(lex *l) {
 		// copy back preserved (back'd) characters
 		// using memmove because it allows for overlapping buffers.
 		if ((l->lexed = memmove(l->lexed, &l->lexed[l->len], l->llen)) == NULL) {
-			// unrecoverable error
+
+			// note the error
 			#ifdef DEBUG
-				err("movement of lex buffer failed: %s.", strerror(errno));
+			err("movement of lex buffer failed: %s.", strerror(errno));
 			#endif
+
 			return 1; // error
 		}
 	}
@@ -85,9 +87,12 @@ char *lex_emit(lex *l) {
 	} else {
 		// using memcpy because memory does not overlap.
 		if ((copy = memcpy(copy, l->lexed, l->len)) == NULL) {
+
+			// note the error
 			#ifdef DEBUG
-				err("copying of lex buffer failed: %s.", strerror(errno));
+			err("copying of lex buffer failed: %s.", strerror(errno));
 			#endif
+
 			return NULL; // error
 		} else {
 			copy[l->len] = '\0'; // null terminate
@@ -112,9 +117,12 @@ char lex_next(lex *l) {
 		if ((l->lexed = realloc(l->lexed, l->size)) == NULL) {
 			// reallocation of lex buffer failed
 			// error by signalling end of input.
+
+			// note the error
 			#ifdef DEBUG
-				err("reallocation of lex buffer failed: %s.", strerror(errno));
+			err("reallocation of lex buffer failed: %s.", strerror(errno));
 			#endif
+
 			return EOF;
 		}
 	}
@@ -164,9 +172,9 @@ void *lex_op(lex *l) {
 	// in either case, the program should not be here, error.
 	if ((gc = lex_peek(l)) == EOF || !(gc == '>' || gc == '<' || gc == '+' || gc == '-')) {
 
+		// note the error
 		#ifdef DEBUG
-			// note that this error is occurring.
-			err("unknown character in lex_op: '%c'.", gc);
+		err("unknown character in lex_op: '%c'.", gc);
 		#endif
 
 		// unrecoverable error, stop lexing.
