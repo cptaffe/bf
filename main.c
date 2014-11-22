@@ -9,6 +9,15 @@
 #include <pthread.h> // threading
 #include <sys/mman.h> // memory mapping for code generation and execution
 
+enum {
+	TOK_PLUS,
+	TOK_MINUS,
+	TOK_GT,
+	TOK_LT,
+	TOK_DOT,
+	TOK_COMMA
+};
+
 typedef struct {
 	int type;
 	char *msg;
@@ -18,6 +27,7 @@ typedef struct {
 // similar to channels in Go
 typedef struct {
 	void *data;
+	// some way to know if its been read
 	pthread_mutex_t lock;
 } chan;
 
@@ -25,6 +35,14 @@ typedef struct {
 chan *chan_init() {
 	chan *c = malloc(sizeof (chan));
 	return c;
+}
+
+void chan_send(void *d) {
+	// do stuff... idk.
+}
+
+void chan_free(chan *c) {
+	free(c);
 }
 
 typedef struct {
@@ -54,8 +72,12 @@ char *lex_emit(lex *l) {
 	char *copy = malloc(l->len + 1);
 	memcpy(copy, l->lexed, l->len);
 	copy[l->len] = '\0'; // null terminate
+	l->llen -= l->len; // preserve offset
+	if (l->llen > 0) {
+		// copy back preserved
+		memcpy(l->lexed, &l->lexed[l->len], l->llen);
+	}
 	l->len = 0; // reset length
-	l->llen = 0;
 	return copy;
 }
 
@@ -93,8 +115,15 @@ char lex_peek(lex *l) {
 void *lex_all(lex *l);
 
 void *lex_gt(lex *l) {
+	char gc; // gotten char
+	if ((gc = lex_peek(l)) == EOF && !(gc == '>' || gc == '<' || gc == '+' || gc == '-')) {
+		return NULL; // err, must exit
+	}
+
 	char c;
-	while ((c = lex_next(l)) != EOF && (c == '>' || c == '<' || c == '+' || c == '-')) {}
+	while ((c = lex_next(l)) != EOF && c == gc) {
+		// printf("got: %c\n", c);
+	}
 	lex_back(l);
 	printf("lexed: %s\n", lex_emit(l));
 	return lex_all;
@@ -106,7 +135,7 @@ void *lex_all(lex *l) {
 		if (c == '>' || c == '<' || c == '+' || c == '-') {
 			return lex_gt;
 		} else {
-			return NULL;
+			lex_next(l); // eat unknown
 		}
 	}
 	return NULL;
