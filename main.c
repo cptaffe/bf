@@ -46,6 +46,7 @@ void chan_free(chan *c) {
 }
 
 typedef struct {
+	int fd;
 	size_t size;
 	int len;
 	int llen; // lexed len
@@ -53,9 +54,10 @@ typedef struct {
 } lex;
 
 // init lexer
-lex *lex_init(size_t sz) {
+lex *lex_init(size_t sz, int fd) {
 	lex *l = malloc(sizeof (lex));
 	l->size = sz;
+	l->fd = fd;
 	l->len = 0;
 	l->llen = 0;
 	l->lexed = malloc(sz); // number of bytes
@@ -68,6 +70,8 @@ void lex_free(lex *l) {
 	free(l);
 }
 
+// dump currently lexed characters while
+// preserving back'd characters.
 void lex_dump(lex *l) {
 	l->llen -= l->len; // preserve offset
 	if (l->llen > 0) {
@@ -77,6 +81,8 @@ void lex_dump(lex *l) {
 	l->len = 0; // reset length
 }
 
+// returns an allocated string with a copy of the
+// currently lexed characters, also dumps.
 char *lex_emit(lex *l) {
 	char *copy = malloc(l->len + 1);
 	memcpy(copy, l->lexed, l->len);
@@ -85,6 +91,8 @@ char *lex_emit(lex *l) {
 	return copy;
 }
 
+// gets the next character, either a back'd
+// character or a character from the file.
 char lex_next(lex *l) {
 	if (l->len >= l->size) {
 		l->size *= 2;
@@ -93,13 +101,16 @@ char lex_next(lex *l) {
 	if (l->llen > l->len) {
 		return l->lexed[l->len++];
 	} else {
-		char c = getchar();
+		char c;
+		int len = read(l->fd, &c, 1);
 		// printf("next! got: %c\n", c);
-		if (c != EOF) {
+		if (len != 0) {
 			l->lexed[l->len++] = c;
 			l->llen++; // increase lexed length
+			return c;
+		} else {
+			return EOF;
 		}
-		return c;
 	}
 }
 
@@ -154,7 +165,7 @@ void lex_state(lex *l) {
 }
 
 int main() {
-	lex *l = lex_init(10);
+	lex *l = lex_init(10, 1);
 	lex_state(l); // state machine loop.
 	lex_free(l);
 }
