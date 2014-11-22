@@ -54,7 +54,7 @@ void lex_free(lex *l) {
 int lex_dump(lex *l) {
 	// if there are back'd characters that need preserving.
 	if ((l->llen -= l->len) > 0) {
-		// copy back preserved (back'd) characters,
+		// copy back preserved (back'd) characters
 		// using memmove because it allows for overlapping buffers.
 		if ((l->lexed = memmove(l->lexed, &l->lexed[l->len], l->llen)) == NULL) {
 			// unrecoverable error
