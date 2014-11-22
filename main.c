@@ -76,7 +76,7 @@ char *lex_emit(lex *l) {
 	return copy;
 }
 
-char *lex_dump(lex *l) {
+void lex_dump(lex *l) {
 	l->llen -= l->len; // preserve offset
 	if (l->llen > 0) {
 		// copy back preserved
