@@ -4,6 +4,8 @@
 #include <pthread.h> // threading
 #include <sys/mman.h> // memory mapping for code generation and execution
 
+#include "lex.h"
+
 enum {
 	TOK_PLUS,
 	TOK_MINUS,
