@@ -68,14 +68,6 @@ void lex_free(lex *l) {
 	free(l);
 }
 
-char *lex_emit(lex *l) {
-	char *copy = malloc(l->len + 1);
-	memcpy(copy, l->lexed, l->len);
-	copy[l->len] = '\0'; // null terminate
-	lex_dump(l);
-	return copy;
-}
-
 void lex_dump(lex *l) {
 	l->llen -= l->len; // preserve offset
 	if (l->llen > 0) {
@@ -83,6 +75,14 @@ void lex_dump(lex *l) {
 		memcpy(l->lexed, &l->lexed[l->len], l->llen);
 	}
 	l->len = 0; // reset length
+}
+
+char *lex_emit(lex *l) {
+	char *copy = malloc(l->len + 1);
+	memcpy(copy, l->lexed, l->len);
+	copy[l->len] = '\0'; // null terminate
+	lex_dump(l);
+	return copy;
 }
 
 char lex_next(lex *l) {
