@@ -50,19 +50,25 @@ void lex_free(lex *l) {
 
 // dump currently lexed characters while
 // preserving back'd characters.
-void lex_dump(lex *l) {
+// errors by returning a non-zero value.
+int lex_dump(lex *l) {
 	// if there are back'd characters that need preserving.
 	if ((l->llen -= l->len) > 0) {
 		// copy back preserved (back'd) characters,
 		// using memmove because it allows for overlapping buffers.
 		if ((l->lexed = memmove(l->lexed, &l->lexed[l->len], l->llen)) == NULL) {
 			// unrecoverable error
-			fail("movement of lex buffer failed: %s.", strerror(errno));
+			#ifdef DEBUG
+				err("movement of lex buffer failed: %s.", strerror(errno));
+			#endif
+			return 1; // error
 		}
 	}
 
 	// reset length
 	l->len = 0;
+
+	return 0; // success
 }
 
 // returns an allocated string with a copy of the
@@ -72,14 +78,22 @@ char *lex_emit(lex *l) {
 
 	// allocate an extra byte for null termination
 	if ((copy = malloc(l->len + 1)) == NULL) {
+		#ifdef DEBUG
+			err("allocation of emittable buffer failed: %s.", strerror(errno));
+		#endif
 		return NULL; // error
 	} else {
 		// using memcpy because memory does not overlap.
 		if ((copy = memcpy(copy, l->lexed, l->len)) == NULL) {
+			#ifdef DEBUG
+				err("copying of lex buffer failed: %s.", strerror(errno));
+			#endif
 			return NULL; // error
 		} else {
 			copy[l->len] = '\0'; // null terminate
-			lex_dump(l);
+			if (!lex_dump(l)) {
+				return NULL; // error
+			}
 			return copy;
 		}
 	}
@@ -97,7 +111,11 @@ char lex_next(lex *l) {
 		l->size *= 2;
 		if ((l->lexed = realloc(l->lexed, l->size)) == NULL) {
 			// reallocation of lex buffer failed
-			fail("reallocation of lex buffer failed: %s.", strerror(errno));
+			// error by signalling end of input.
+			#ifdef DEBUG
+				err("reallocation of lex buffer failed: %s.", strerror(errno));
+			#endif
+			return EOF;
 		}
 	}
 
@@ -148,7 +166,7 @@ void *lex_op(lex *l) {
 
 		#ifdef DEBUG
 			// note that this error is occurring.
-			fprintf(stderr, "unknown character in lex_op: '%c'\n", gc);
+			err("unknown character in lex_op: '%c'.", gc);
 		#endif
 
 		// unrecoverable error, stop lexing.
@@ -161,9 +179,13 @@ void *lex_op(lex *l) {
 
 		#ifdef DEBUG
 			// get the current lex'd string from emit.
-			char *msg = lex_emit(l);
-			printf("lexed: %s\n", msg);
-			free(msg);
+			char *msg;
+			if ((msg = lex_emit(l)) == NULL) {
+				return NULL; // error
+			} else {
+				printf("lexed: %s\n", msg);
+				free(msg);
+			}
 		#endif
 
 		// return to the default state.
@@ -179,7 +201,8 @@ void *lex_all(lex *l) {
 			return lex_op;
 		} else {
 			// ignores unknown characters
-			lex_next(l); lex_dump(l); // eat unknown
+			lex_next(l);
+			if (!lex_dump(l)) { return NULL; } // error
 		}
 	}
 	return NULL;

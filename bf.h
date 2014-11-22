@@ -5,4 +5,6 @@
 // log error and gracefully fail.
 void fail(char *msg, ...);
 
+void err(char *msg, ...);
+
 #endif // BF_BF_H_
