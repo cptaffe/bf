@@ -140,7 +140,9 @@ void *lex_gt(lex *l) {
 		// printf("got: %c\n", c);
 	}
 	lex_back(l);
-	printf("lexed: %s\n", lex_emit(l));
+	char *msg = lex_emit(l);
+	printf("lexed: %s\n", msg);
+	free(msg);
 	return lex_all;
 }
 
