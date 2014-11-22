@@ -72,13 +72,17 @@ char *lex_emit(lex *l) {
 	char *copy = malloc(l->len + 1);
 	memcpy(copy, l->lexed, l->len);
 	copy[l->len] = '\0'; // null terminate
+	lex_dump(l);
+	return copy;
+}
+
+char *lex_dump(lex *l) {
 	l->llen -= l->len; // preserve offset
 	if (l->llen > 0) {
 		// copy back preserved
 		memcpy(l->lexed, &l->lexed[l->len], l->llen);
 	}
 	l->len = 0; // reset length
-	return copy;
 }
 
 char lex_next(lex *l) {
@@ -135,7 +139,7 @@ void *lex_all(lex *l) {
 		if (c == '>' || c == '<' || c == '+' || c == '-') {
 			return lex_gt;
 		} else {
-			lex_emit(l); // eat unknown
+			lex_dump(l); // eat unknown
 		}
 	}
 	return NULL;
