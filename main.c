@@ -135,7 +135,7 @@ void *lex_all(lex *l) {
 		if (c == '>' || c == '<' || c == '+' || c == '-') {
 			return lex_gt;
 		} else {
-			lex_next(l); // eat unknown
+			lex_emit(l); // eat unknown
 		}
 	}
 	return NULL;
