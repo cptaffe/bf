@@ -51,7 +51,7 @@ void lex_free(lex *l) {
 // dump currently lexed characters while
 // preserving back'd characters.
 // errors by returning a non-zero value.
-int lex_dump(lex *l) {
+static int lex_dump(lex *l) {
 	// if there are back'd characters that need preserving.
 	if ((l->llen -= l->len) > 0) {
 		// copy back preserved (back'd) characters
@@ -75,7 +75,7 @@ int lex_dump(lex *l) {
 
 // returns an allocated string with a copy of the
 // currently lexed characters, also dumps.
-char *lex_emit(lex *l) {
+static char *lex_emit(lex *l) {
 	char *copy;
 
 	// allocate an extra byte for null termination
@@ -109,7 +109,7 @@ char *lex_emit(lex *l) {
 
 // gets the next character, either a back'd
 // character or a character from the file.
-char lex_next(lex *l) {
+static char lex_next(lex *l) {
 
 	// reallocate 'lexed' buffer when it runs out of space
 	// simply doubles the size.
@@ -148,7 +148,7 @@ char lex_next(lex *l) {
 }
 
 // backup a character, leaving llen at its current position.
-void lex_back(lex *l) {
+static void lex_back(lex *l) {
 	if (l->len > 0) {
 		l->len--;
 	}
@@ -156,18 +156,18 @@ void lex_back(lex *l) {
 
 // get the next character (either back'd or from file),
 // and backup so it can be next'd again.
-char lex_peek(lex *l) {
+static char lex_peek(lex *l) {
 	char c = lex_next(l);
 	lex_back(l);
 	return c;
 }
 
 // function signature for state functions
-void *lex_all(lex *l);
-void *lex_op(lex *l);
+static void *lex_all(lex *l);
+static void *lex_op(lex *l);
 
 // lexes operator characters, but does not handle loops.
-void *lex_op(lex *l) {
+static void *lex_op(lex *l) {
 
 	char gc; // gotten char
 
@@ -206,7 +206,7 @@ void *lex_op(lex *l) {
 
 // default state function,
 // lexes the initial state and returns subsequent states.
-void *lex_all(lex *l) {
+static void *lex_all(lex *l) {
 	char c;
 	while ((c = lex_peek(l)) != EOF) {
 		// looks for a lexable character
