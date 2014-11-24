@@ -51,7 +51,7 @@ void lex_free(lex *l) {
 // dump currently lexed characters while
 // preserving back'd characters.
 // errors by returning a non-zero value.
-static int lex_dump(lex *l) {
+int lex_dump(lex *l) {
 	// if there are back'd characters that need preserving.
 	if ((l->llen -= l->len) > 0) {
 		// copy back preserved (back'd) characters
@@ -60,7 +60,7 @@ static int lex_dump(lex *l) {
 
 			// note the error
 			#ifdef DEBUG
-			err("movement of lex buffer failed: %s.", strerror(errno));
+			err("lex_dump: movement of lex buffer failed: %s.", strerror(errno));
 			#endif
 
 			return 1; // error
@@ -75,7 +75,7 @@ static int lex_dump(lex *l) {
 
 // returns an allocated string with a copy of the
 // currently lexed characters, also dumps.
-static char *lex_emit(lex *l) {
+char *lex_emit(lex *l) {
 	char *copy;
 
 	// allocate an extra byte for null termination
@@ -83,7 +83,7 @@ static char *lex_emit(lex *l) {
 
 		// note the error
 		#ifdef DEBUG
-			err("allocation of emittable buffer failed: %s.", strerror(errno));
+			err("lex_emit: allocation of emittable buffer failed: %s.", strerror(errno));
 		#endif
 
 		return NULL; // error
@@ -93,7 +93,7 @@ static char *lex_emit(lex *l) {
 
 			// note the error
 			#ifdef DEBUG
-			err("copying of lex buffer failed: %s.", strerror(errno));
+			err("lex_emit: copying of lex buffer failed: %s.", strerror(errno));
 			#endif
 
 			return NULL; // error
@@ -109,7 +109,7 @@ static char *lex_emit(lex *l) {
 
 // gets the next character, either a back'd
 // character or a character from the file.
-static char lex_next(lex *l) {
+int lex_next(lex *l) {
 
 	// reallocate 'lexed' buffer when it runs out of space
 	// simply doubles the size.
@@ -123,10 +123,11 @@ static char lex_next(lex *l) {
 
 			// note the error
 			#ifdef DEBUG
-			err("reallocation of lex buffer failed: %s.", strerror(errno));
+			err("lex_next: reallocation of lex buffer failed: %s.", strerror(errno));
 			#endif
 
-			return EOF;
+			// error
+			return -1;
 		}
 	}
 
@@ -143,93 +144,54 @@ static char lex_next(lex *l) {
 			l->llen++; // increase lexed length
 		}
 
-		return c;
+		return (int) c;
 	}
 }
 
 // backup a character, leaving llen at its current position.
-static void lex_back(lex *l) {
+int lex_back(lex *l) {
 	if (l->len > 0) {
 		l->len--;
+		return 0;
+	} else {
+		return 1;
 	}
 }
 
 // get the next character (either back'd or from file),
 // and backup so it can be next'd again.
-static char lex_peek(lex *l) {
-	char c = lex_next(l);
-	lex_back(l);
-	return c;
-}
+int lex_peek(lex *l) {
+	int c = lex_next(l);
+	if (c < 0) {
 
-// function signature for state functions
-static void *lex_all(lex *l);
-static void *lex_op(lex *l);
-
-// lexes operator characters, but does not handle loops.
-static void *lex_op(lex *l) {
-
-	char gc; // gotten char
-
-	// check if the current character is not an op or is an EOF.
-	// in either case, the program should not be here, error.
-	if ((gc = lex_peek(l)) == EOF || !(gc == '>' || gc == '<' || gc == '+' || gc == '-')) {
-
-		// note the error
+		// note error
 		#ifdef DEBUG
-		err("unknown character in lex_op: '%c'.", gc);
+		err("lex_peek: cannot get next character: %s.", strerror(errno));
 		#endif
 
-		// unrecoverable error, stop lexing.
-		return NULL;
+		// error
+		return -1;
 	} else {
-		// lex the op type as a string of consecutive ops of the same type.
-		char c;
-		while ((c = lex_next(l)) != EOF && c == gc) {}
-		lex_back(l);
+		if (!lex_back(l)) {
 
-		#ifdef DEBUG
-			// get the current lex'd string from emit.
-			char *msg;
-			if ((msg = lex_emit(l)) == NULL) {
-				return NULL; // error
-			} else {
-				printf("lexed: %s\n", msg);
-				free(msg);
-			}
-		#endif
+			// note error
+			#ifdef DEBUG
+			err("lex_peek: cannot back character: %s.", strerror(errno));
+			#endif
 
-		// return to the default state.
-		return lex_all;
-	}
-}
-
-// default state function,
-// lexes the initial state and returns subsequent states.
-static void *lex_all(lex *l) {
-	char c;
-	while ((c = lex_peek(l)) != EOF) {
-		// looks for a lexable character
-		if (c == '>' || c == '<' || c == '+' || c == '-') {
-			return lex_op;
+			// error.
+			return -2;
 		} else {
-			// ignores unknown characters
-			lex_next(l);
-			if (lex_dump(l)) { return NULL; } // error
+			return c;
 		}
 	}
-	return NULL;
 }
 
 // finite state machine!
 void lex_state(lex *l) {
-
-	// start with lex_all, the default.
-	void *func = lex_all;
-
 	// loop until a state function returns NULL.
 	while (func != NULL) {
 		// type conversion for simplicity.
-		func = ((void *(*)(lex *)) func)(l);
+		l->func = (void *(*)(lex *)) l->func(l);
 	}
 }
