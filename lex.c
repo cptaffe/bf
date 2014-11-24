@@ -9,7 +9,6 @@
 
 extern int errno;
 
-#include "bf.h"
 #include "lex.h"
 
 // allocate and initialize the lexer struct
@@ -63,7 +62,7 @@ int lex_dump(lex *l) {
 
 			// note the error
 			#ifdef DEBUG
-			err("lex_dump: movement of lex buffer failed: %s.", strerror(errno));
+			fprintf(stderr, "lex_dump: movement of lex buffer failed: %s.\n", strerror(errno));
 			#endif
 
 			return 1; // error
@@ -86,7 +85,7 @@ char *lex_emit(lex *l) {
 
 		// note the error
 		#ifdef DEBUG
-		err("lex_emit: allocation of emittable buffer failed: %s.", strerror(errno));
+		fprintf(stderr, "lex_emit: allocation of emittable buffer failed: %s.\n", strerror(errno));
 		#endif
 
 		return NULL; // error
@@ -96,7 +95,7 @@ char *lex_emit(lex *l) {
 
 			// note the error
 			#ifdef DEBUG
-			err("lex_emit: copying of lex buffer failed: %s.", strerror(errno));
+			fprintf(stderr, "lex_emit: copying of lex buffer failed: %s.\n", strerror(errno));
 			#endif
 
 			return NULL; // error
@@ -127,11 +126,11 @@ int lex_next(lex *l) {
 
 			// note the error
 			#ifdef DEBUG
-			err("lex_next: reallocation of lex buffer failed: %s.", strerror(errno));
+			fprintf(stderr, "lex_next: reallocation of lex buffer failed: %s.\n", strerror(errno));
 			#endif
 
 			// error
-			return -1;
+			return -2;
 		}
 	}
 
@@ -156,9 +155,9 @@ int lex_next(lex *l) {
 int lex_back(lex *l) {
 	if (l->len > 0) {
 		l->len--;
-		return 0;
+		return 0; // success
 	} else {
-		return 1;
+		return 1; // error
 	}
 }
 
@@ -166,25 +165,27 @@ int lex_back(lex *l) {
 // and backup so it can be next'd again.
 int lex_peek(lex *l) {
 	int c = lex_next(l);
-	if (c < 0) {
+	if (c < -1) {
 
 		// note error
 		#ifdef DEBUG
-		err("lex_peek: cannot get next character: %s.", strerror(errno));
+		fprintf(stderr, "lex_peek: cannot get next character: %s.\n", strerror(errno));
 		#endif
 
 		// error
-		return -1;
+		return -2;
 	} else {
-		if (lex_back(l)) {
+
+		// do not back on EOF
+		if (c != EOF && lex_back(l)) {
 
 			// note error
 			#ifdef DEBUG
-			err("lex_peek: cannot back character: %s.", strerror(errno));
+			fprintf(stderr, "lex_peek: cannot back character: %s.\n", strerror(errno));
 			#endif
 
 			// error.
-			return -2;
+			return -3;
 		} else {
 			return c;
 		}

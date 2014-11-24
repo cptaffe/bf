@@ -13,9 +13,9 @@ void *lex_op(lex *l) {
 
 	// check if the current character is not an op or is an EOF.
 	// in either case, the program should not be here, error.
-	if ((gc = lex_peek(l)) < 0 || gc == EOF || !(gc == '>' || gc == '<' || gc == '+' || gc == '-')) {
+	if ((gc = lex_peek(l)) < 0 || !(gc == '>' || gc == '<' || gc == '+' || gc == '-')) {
 
-		if (gc < 0) {
+		if (gc < -1) {
 			// unrecoverable error, stop lexing.
 			return NULL;
 		} else {
@@ -31,9 +31,9 @@ void *lex_op(lex *l) {
 
 		// lex the op type as a string of consecutive ops of the same type.
 		int c;
-		while ((c = lex_next(l)) >= 0 && c != EOF && c == gc) {}
+		while ((c = lex_next(l)) >= 0 && c == gc) {}
 
-		if (c < 0) {
+		if (c < -1) {
 
 			// unrecoverable error, stop lexing.
 			return NULL;
@@ -66,7 +66,7 @@ void *lex_op(lex *l) {
 // lexes the initial state and returns subsequent states.
 void *lex_all(lex *l) {
 	char c;
-	while ((c = lex_peek(l)) >= 0 && c != EOF) {
+	while ((c = lex_peek(l)) >= 0) {
 		// looks for a lexable character
 		if (c == '>' || c == '<' || c == '+' || c == '-') {
 			return lex_op;

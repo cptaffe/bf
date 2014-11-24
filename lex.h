@@ -48,7 +48,7 @@ char *lex_emit(lex *l);
 
 // lexes one character into the lex buffer,
 // returns the characer.
-// on error returns negative value.
+// on error returns negative value less than -1 (EOF).
 int lex_next(lex *l);
 
 // backs one character from the lex buffer (if it can),
@@ -57,7 +57,7 @@ int lex_back(lex *l);
 
 // peeks ahead one character,
 // guarantees it will be avaliable on the next call to next.
-// returns a negative value on error.
+// on error returns a negative value less than -1 (EOF).
 int lex_peek(lex *l);
 
 #endif // BF_LEX_H_
