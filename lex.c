@@ -15,7 +15,7 @@ extern int errno;
 // allocate and initialize the lexer struct
 // returns a pointer to an allocated lex if successful,
 // else returns NULL.
-lex *lex_init(size_t sz, FILE *file) {
+lex *lex_init(size_t sz, FILE *file, void *(*func)(lex *)) {
 	lex *l;
 
 	// allocate lex
@@ -27,6 +27,9 @@ lex *lex_init(size_t sz, FILE *file) {
 
 		// set file to read from
 		l->file = file;
+
+		// set first state function
+		l->func = func;
 
 		// zero lens
 		l->len = 0;
@@ -83,7 +86,7 @@ char *lex_emit(lex *l) {
 
 		// note the error
 		#ifdef DEBUG
-			err("lex_emit: allocation of emittable buffer failed: %s.", strerror(errno));
+		err("lex_emit: allocation of emittable buffer failed: %s.", strerror(errno));
 		#endif
 
 		return NULL; // error
@@ -101,8 +104,9 @@ char *lex_emit(lex *l) {
 			copy[l->len] = '\0'; // null terminate
 			if (lex_dump(l)) {
 				return NULL; // error
+			} else {
+				return copy;
 			}
-			return copy;
 		}
 	}
 }
@@ -172,7 +176,7 @@ int lex_peek(lex *l) {
 		// error
 		return -1;
 	} else {
-		if (!lex_back(l)) {
+		if (lex_back(l)) {
 
 			// note error
 			#ifdef DEBUG
@@ -190,7 +194,7 @@ int lex_peek(lex *l) {
 // finite state machine!
 void lex_state(lex *l) {
 	// loop until a state function returns NULL.
-	while (func != NULL) {
+	while (l->func != NULL) {
 		// type conversion for simplicity.
 		l->func = (void *(*)(lex *)) l->func(l);
 	}

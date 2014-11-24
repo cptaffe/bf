@@ -3,7 +3,7 @@
 #define BF_LEX_H_
 
 // The lex struct is passed to all lex functions.
-typedef struct {
+struct lex {
 	// file is the current input file, given to lex_init
 	FILE *file;
 	// size is the specified size of the buffer, given to lex_init
@@ -15,8 +15,10 @@ typedef struct {
 	// text buffer
 	char *lexed;
 	// state function
-	void *(*func)(lex *);
-} lex;
+	void *(*func)(struct lex *);
+};
+
+typedef struct lex lex;
 
 // allocate and initiate lexer
 // takes the length of the lex buffer, the file to lex from,

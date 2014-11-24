@@ -10,10 +10,11 @@
 extern int errno;
 
 #include "lex.h"
+#include "lex_funcs.h"
 #include "bf.h"
 
 int main() {
-	lex *l = lex_init(10, stdin);
+	lex *l = lex_init(10, stdin, lex_all);
 	if (l == NULL) {fail("allocation of lex failed: %s.", strerror(errno));}
 	lex_state(l); // state machine loop.
 	lex_free(l);
