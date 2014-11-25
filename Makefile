@@ -1,5 +1,5 @@
 
-CFLAGS+= -DDEBUG -Ilex
+CFLAGS+= -g -DDEBUG -Ilex
 
 SRC = main.c bf.c lex_funcs.c
 OBJ = $(SRC:.c=.o)

@@ -15,7 +15,22 @@ extern int errno;
 
 int main() {
 	lex *l = lex_init(10, stdin, lex_all);
-	if (l == NULL) {fail("allocation of lex failed: %s.", strerror(errno));}
-	lex_state(l); // state machine loop.
-	lex_free(l);
+	if (l == NULL) {
+		err("allocation of lex failed: %s.", strerror(errno));
+	} else {
+
+		// init lex data
+		l->data = lex_data_init();
+
+		if (l->data == NULL) {
+			err("allocation of lex_data failed: %s.", strerror(errno));
+		} else {
+
+			// state machine loop.
+			lex_state(l);
+		}
+
+		// free lex
+		lex_free(l);
+	}
 }

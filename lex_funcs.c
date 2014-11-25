@@ -6,6 +6,23 @@
 #include "lex.h"
 #include "lex_funcs.h"
 
+lex_data *lex_data_init() {
+	lex_data *l = malloc(sizeof (lex_data));
+	if (l == NULL) {
+		return NULL;
+	} else {
+
+		// init loop count
+		l->loop_count = 0;
+
+		return l;
+	}
+}
+
+void lex_data_free(lex_data *l) {
+	free(l);
+}
+
 // lexes operator characters, but does not handle loops.
 void *lex_op(lex *l) {
 
@@ -21,7 +38,7 @@ void *lex_op(lex *l) {
 		} else {
 			// note the error
 			#ifdef DEBUG
-			err("unknown character in lex_op: '%c'.", gc);
+			err("lex_op: expected operator, saw '%c'.", gc);
 			#endif
 
 			// unrecoverable error, stop lexing.
@@ -30,7 +47,7 @@ void *lex_op(lex *l) {
 	} else {
 
 		// lex the op type as a string of consecutive ops of the same type.
-		int c;
+		char c;
 		while ((c = lex_next(l)) >= 0 && c == gc) {}
 
 		if (c < -1) {
@@ -62,6 +79,86 @@ void *lex_op(lex *l) {
 	}
 }
 
+// lexes loop character
+void *lex_loop(lex *l) {
+	char c;
+	if ((c = lex_next(l)) >= 0) {
+		lex_data *ld;
+		if ((ld = (lex_data *) l->data) == NULL) {
+
+			// note error
+			#ifdef DEBUG
+			err("lex_loop: undefined lex->data");
+			#endif
+
+			// unrecoverable error, stop lexing
+			return NULL;
+		} else {
+			if (c == '[') {
+
+				// acknowledge loop begin
+				ld->loop_count++;
+
+				// note lexed content
+				#ifdef DEBUG
+				char *msg;
+				if ((msg = lex_emit(l)) == NULL) {
+					return NULL; // error
+				} else {
+					printf("lexed: %s\n", msg);
+					free(msg);
+				}
+				#endif
+
+				return lex_all;
+			} else if (c == ']') {
+
+				// acknowledge loop end
+				ld->loop_count--;
+
+				// note lexed content
+				#ifdef DEBUG
+				char *msg;
+				if ((msg = lex_emit(l)) == NULL) {
+					return NULL; // error
+				} else {
+					printf("lexed: %s\n", msg);
+					free(msg);
+				}
+				#endif
+
+				return lex_all;
+			} else {
+
+				// note error
+				#ifdef DEBUG
+				err("lex_loop: expected loop, saw '%c'", c);
+				#endif
+
+				// unrecoverable error, stop lexing.
+				return NULL;
+			}
+		}
+	} else {
+
+		// catch error
+		if (c < -1) {
+
+			// unrecoverable error, stop lexing.
+			return NULL;
+		} else {
+
+			// called with EOF
+			#ifdef DEBUG
+			err("lex_loop: unexpected character EOF");
+			#endif
+
+			// unrecoverable error, stop lexing.
+			return NULL;
+		}
+	}
+}
+
 // default state function,
 // lexes the initial state and returns subsequent states.
 void *lex_all(lex *l) {
@@ -70,6 +167,8 @@ void *lex_all(lex *l) {
 		// looks for a lexable character
 		if (c == '>' || c == '<' || c == '+' || c == '-') {
 			return lex_op;
+		} else if (c == '[' || c == ']') {
+			return lex_loop;
 		} else {
 			// ignores unknown characters
 			if (lex_next(l) < 0) { return NULL; } // error
