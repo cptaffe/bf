@@ -3,6 +3,7 @@
 #include <stdlib.h>
 
 #include "bf.h" // err
+#include "tok.h"
 #include "lex.h"
 #include "lex_funcs.h"
 
@@ -23,6 +24,17 @@ void lex_data_free(lex_data *l) {
 	free(l);
 }
 
+// send tokens
+void lex_tok_push(lex *l, tok *t) {
+
+	// note pushing of token
+	printf("lex'd & push'd: '%s'.\n", t->msg);
+
+	// deallocate
+	free(t->msg);
+	free(t);
+}
+
 // lexes operator characters, but does not handle loops.
 void *lex_op(lex *l) {
 
@@ -30,7 +42,7 @@ void *lex_op(lex *l) {
 
 	// check if the current character is not an op or is an EOF.
 	// in either case, the program should not be here, error.
-	if ((gc = lex_peek(l)) < 0 || !(gc == '>' || gc == '<' || gc == '+' || gc == '-')) {
+	if ((gc = lex_peek(l)) < 0 || !(gc == '>' || gc == '<' || gc == '+' || gc == '-' || gc == '.' || gc == ',')) {
 
 		if (gc < -1) {
 			// unrecoverable error, stop lexing.
@@ -67,8 +79,34 @@ void *lex_op(lex *l) {
 				if ((msg = lex_emit(l)) == NULL) {
 					return NULL; // error
 				} else {
-					printf("lexed: %s\n", msg);
-					free(msg);
+					// get token type from gotten char.
+					int type;
+					switch (gc) {
+						case '-':
+							type = TOK_MINUS;
+							break;
+						case '+':
+							type = TOK_PLUS;
+							break;
+						case '>':
+							type = TOK_GT;
+							break;
+						case '<':
+							type = TOK_LT;
+							break;
+						case '.':
+							type = TOK_DOT;
+							break;
+						case ',':
+							type = TOK_COMMA;
+							break;
+						default:
+							fail("unknown token type, should never reach.");
+					}
+
+					// allocate & send token
+					tok *t = tok_init(type, msg);
+					lex_tok_push(l, t);
 				}
 				#endif
 
@@ -105,8 +143,9 @@ void *lex_loop(lex *l) {
 				if ((msg = lex_emit(l)) == NULL) {
 					return NULL; // error
 				} else {
-					printf("lexed: %s\n", msg);
-					free(msg);
+					// allocate & send token
+					tok *t = tok_init(TOK_RB, msg);
+					lex_tok_push(l, t);
 				}
 				#endif
 
@@ -122,8 +161,9 @@ void *lex_loop(lex *l) {
 				if ((msg = lex_emit(l)) == NULL) {
 					return NULL; // error
 				} else {
-					printf("lexed: %s\n", msg);
-					free(msg);
+					// allocate & send token
+					tok *t = tok_init(TOK_LB, msg);
+					lex_tok_push(l, t);
 				}
 				#endif
 
@@ -165,7 +205,7 @@ void *lex_all(lex *l) {
 	char c;
 	while ((c = lex_peek(l)) >= 0) {
 		// looks for a lexable character
-		if (c == '>' || c == '<' || c == '+' || c == '-') {
+		if (c == '>' || c == '<' || c == '+' || c == '-' || c == '.' || c == ',') {
 			return lex_op;
 		} else if (c == '[' || c == ']') {
 			return lex_loop;

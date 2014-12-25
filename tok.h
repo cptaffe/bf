@@ -8,12 +8,16 @@ enum {
 	TOK_GT,
 	TOK_LT,
 	TOK_DOT,
-	TOK_COMMA
+	TOK_COMMA,
+	TOK_LB,
+	TOK_RB
 };
 
 typedef struct {
 	int type;
 	char *msg;
 } tok;
+
+tok *tok_init(int type, char *msg);
 
 #endif // BF_TOK_H_

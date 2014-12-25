@@ -25,8 +25,8 @@ static char *format(char *fmt) {
 				return NULL; // error
 			} else {
 				// append newline, null terminate
-				msg[len - 1] = '\n';
-				msg[len] = '\0';
+				msg[len] = '\n';
+				msg[len + 1] = '\0';
 
 				return msg;
 			}
@@ -35,7 +35,7 @@ static char *format(char *fmt) {
 }
 
 // takes a string message, prints it to stderr,
-// then exits with a failure.
+// then exits the process with a failure.
 void fail(char *fmt, ...) {
 
 	// handle failure message

@@ -17,7 +17,7 @@ void lex_data_free(lex_data *l);
 // serves as the default lexer.
 void *lex_all(lex *l);
 
-// lexes operators (+, -, *, /)
+// lexes operators ('+', '-', '<', '>', ',', '.')
 void *lex_op(lex *l);
 
 // lexes loops ([, ])
