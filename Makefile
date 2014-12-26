@@ -1,5 +1,9 @@
 
-CFLAGS+= -g -DDEBUG -Ilex --std=c11 -lpthread
+CFLAGS+= -g -DDEBUG -Ilex --std=c11
+
+ifeq ($(CC), gcc)
+	CFLAGS+= -lpthread
+endif
 
 SRC = main.c bf.c lex_funcs.c tok.c stack.c astree.c parse.c lex_threadable.c jit.c link.c
 OBJ = $(SRC:.c=.o)
