@@ -43,7 +43,7 @@ int main(int argc, char **argv) {
 	}
 
 	// init parser
-	bf_parse *p = bf_parse_init(((lex_data *) l->data)->st, bf_parse_all);
+	bf_parse *p = bf_parse_init(((lex_data *) l->data)->st);
 	if (p == NULL) {
 		fail("lex alloc failed: %s.", strerror(errno));
 	}
@@ -73,4 +73,7 @@ int main(int argc, char **argv) {
 	// free lex
 	bf_lex_data_free(l->data);
 	lex_free(l);
+
+	// free parse
+	bf_parse_free(p);
 }

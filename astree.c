@@ -36,7 +36,11 @@ void bf_astree_free(bf_astree* t) {
 int bf_astree_child_add(bf_astree *t, bf_astree *c) {
 	// realloc
 	t->chld_num++;
-	t->chld = realloc(t->chld, sizeof(bf_astree) * t->chld_num);
+	if (t->chld_num == 1) {
+		t->chld = malloc(sizeof(bf_astree));
+	} else {
+		t->chld = realloc(t->chld, sizeof(bf_astree) * t->chld_num);
+	}
 	if (t->chld == NULL) {
 		// return error if errno is set, else 1.
 		if (errno) {
