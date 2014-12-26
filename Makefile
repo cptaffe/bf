@@ -1,5 +1,5 @@
 
-CFLAGS+= -g -DDEBUG -Ilex
+CFLAGS+= -g -DDEBUG -Ilex --std=c11
 
 SRC = main.c bf.c lex_funcs.c tok.c stack.c astree.c parse.c lex_threadable.c jit.c link.c
 OBJ = $(SRC:.c=.o)
