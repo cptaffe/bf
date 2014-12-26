@@ -1,62 +1,8 @@
 
 #include <stdlib.h>
-#include <stdbool.h>
+#include <errno.h>
 
 #include "stack.h"
-
-// link insert
-static bf_link *bf_link_push(bf_link *lnk, void *data) {
-	bf_link *nlnk = malloc(sizeof(bf_link));
-	if (nlnk == NULL) { return NULL; }
-	nlnk->next = lnk;
-	nlnk->data = data;
-	return nlnk;
-}
-
-// pop from top
-static void *bf_link_pop(bf_link *lnk) {
-	if (lnk != NULL) {
-		bf_link *l = lnk->next;
-		free(lnk);
-		return l;
-	} else {
-		return NULL;
-	}
-}
-
-// recursive link traversal
-// returns NULL for empty list, else last node.
-static void *bf_link_pop_bottom(bf_link *lnk) {
-	// root is only node
-	if (lnk->next == NULL) {
-		return NULL;
-	}
-
-	// traverse list
-	while (lnk->next->next != NULL) {
-		lnk = lnk->next;
-	}
-
-	free(lnk->next);
-	lnk->next = NULL;
-
-	return lnk;
-}
-
-static void *bf_link_top(bf_link *lnk) {
-	return lnk->data;
-}
-
-static void *bf_link_bottom(bf_link *lnk) {
-	while (lnk->next != NULL) {
-		lnk = lnk->next;
-	}
-	return lnk->data;
-}
-
-static bool bf_link_empty(bf_link *lnk) {
-	return (lnk == NULL);
-}
 
 // initialize stack
 bf_stack *bf_stack_init() {
@@ -81,7 +27,7 @@ int bf_stack_free(bf_stack *stk) {
 
 	// dealloc all links
 	if (stk->lnk != NULL) {
-		return false;
+		return 1;
 	}
 
 	// destroy conditional & mutex
@@ -124,6 +70,40 @@ void *bf_stack_pop(bf_stack *stk) {
 	// get data
 	void *data = bf_link_top(stk->lnk);
 	stk->lnk = bf_link_pop(stk->lnk);
+
+	// unlock
+	pthread_mutex_unlock(&stk->mut);
+	return data;
+}
+
+// get ptr from stack, without removing.
+void *bf_stack_top(bf_stack *stk) {
+	// lock & wait for signal
+	pthread_mutex_lock(&stk->mut);
+	while (bf_stack_empty(stk) && bf_stack_alive(stk)) {
+		pthread_cond_wait(&stk->cond, &stk->mut);
+	}
+	if (!bf_stack_alive(stk)) { return NULL; } // die on dead
+
+	// get data
+	void *data = bf_link_top(stk->lnk);
+
+	// unlock
+	pthread_mutex_unlock(&stk->mut);
+	return data;
+}
+
+// get ptr from queue, without removing.
+void *bf_stack_bottom(bf_stack *stk) {
+	// lock & wait for signal
+	pthread_mutex_lock(&stk->mut);
+	while (bf_stack_empty(stk) && bf_stack_alive(stk)) {
+		pthread_cond_wait(&stk->cond, &stk->mut);
+	}
+	if (!bf_stack_alive(stk)) { return NULL; } // die on dead
+
+	// get data
+	void *data = bf_link_bottom(stk->lnk);
 
 	// unlock
 	pthread_mutex_unlock(&stk->mut);

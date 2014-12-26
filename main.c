@@ -8,25 +8,10 @@
 #include <sys/mman.h> // memory mapping for code generation and execution
 
 #include "lex.h"
+#include "parse.h"
 #include "lex_funcs.h"
 #include "bf.h"
 #include "tok.h"
-
-// consumer
-void *stack_fmt(void *st) {
-	bf_stack *stk = (bf_stack *) st;
-	while (bf_stack_alive(stk)) {
-		// use get, acts as a queue
-		bf_tok *t = (bf_tok *) bf_stack_get(stk);
-		if (t == NULL) {
-			return (void *) 1; // err
-		}
-		printf("lex'd: %s.\n", t->msg);
-		bf_tok_free(t);
-		free(t->msg);
-	}
-	return NULL;
-}
 
 int main(int argc, char **argv) {
 
@@ -57,6 +42,12 @@ int main(int argc, char **argv) {
 		fail("lex_data alloc failed: %s.", strerror(errno));
 	}
 
+	// init parser
+	bf_parse *p = bf_parse_init(((lex_data *) l->data)->st, bf_parse_all);
+	if (p == NULL) {
+		fail("lex alloc failed: %s.", strerror(errno));
+	}
+
 	// lexer state machine thread, check lex_state_threadable create success
 	pthread_t threads[2];
 	int lstcs = pthread_create(&threads[0], NULL, lex_state_threadable, (void *) l);
@@ -66,7 +57,7 @@ int main(int argc, char **argv) {
 
 	// parser, check lex_state_threadable create success
 	pthread_t parser_thread;
-	int pcs = pthread_create(&threads[1], NULL, stack_fmt, (void *) ((lex_data *) l->data)->st);
+	int pcs = pthread_create(&threads[1], NULL, bf_parse_threadable, (void *) p);
 	if (pcs != 0) {
 		fail("creating lex_state_threadable thread failed: %s.", strerror(errno));
 	}

@@ -5,13 +5,8 @@
 #include <pthread.h>
 #include <stdbool.h>
 
-// linked list
-struct bf_link {
-	void *data;
-	struct bf_link *next;
-};
+#include "link.h"
 
-typedef struct bf_link bf_link;
 
 typedef struct {
 	// multithread syncronization
@@ -25,6 +20,8 @@ bf_stack *bf_stack_init();
 int bf_stack_free(bf_stack *stk);
 void bf_stack_push(bf_stack *st, void *data);
 void *bf_stack_pop(bf_stack *st);
+void *bf_stack_top(bf_stack *stk);
+void *bf_stack_bottom(bf_stack *stk);
 void *bf_stack_get(bf_stack *stk);
 bool bf_stack_empty(bf_stack *st);
 bool bf_stack_alive(bf_stack *stk);

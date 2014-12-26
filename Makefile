@@ -1,9 +1,9 @@
 
 CFLAGS+= -g -DDEBUG -Ilex
 
-SRC = main.c bf.c lex_funcs.c tok.c stack.c astree.c parse.c lex_threadable.c jit.c
+SRC = main.c bf.c lex_funcs.c tok.c stack.c astree.c parse.c lex_threadable.c jit.c link.c
 OBJ = $(SRC:.c=.o)
-HDR = bf.h tok.h lex_funcs.h tok.h stack.h astree.h parse.h lex_threadable.h jit.h
+HDR = bf.h tok.h lex_funcs.h tok.h stack.h astree.h parse.h lex_threadable.h jit.h link.h
 LIB = lex/lex.a
 
 LOG = log.txt # testing log
