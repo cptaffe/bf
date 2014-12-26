@@ -17,3 +17,7 @@ tok *tok_init(int type, char *msg) {
 		return t;
 	}
 }
+
+void tok_free(tok *t) {
+	free (t);
+}

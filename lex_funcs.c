@@ -1,6 +1,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 #include "bf.h" // err
 #include "tok.h"
@@ -15,24 +16,22 @@ lex_data *lex_data_init() {
 
 		// init loop count
 		l->loop_count = 0;
+		l->st = bf_stack_init();
+		if (l->st == NULL) { return NULL; }
 
 		return l;
 	}
 }
 
 void lex_data_free(lex_data *l) {
+	bf_stack_free(l->st);
 	free(l);
 }
 
 // send tokens
-void lex_tok_push(lex *l, tok *t) {
-
-	// note pushing of token
-	printf("lex'd & push'd: '%s'.\n", t->msg);
-
-	// deallocate
-	free(t->msg);
-	free(t);
+bool lex_tok_push(lex *l, tok *t) {
+	bf_stack_push(((lex_data *) l->data)->st, (void *) t);
+	return true;
 }
 
 // lexes operator characters, but does not handle loops.
@@ -106,6 +105,16 @@ void *lex_op(lex *l) {
 
 					// allocate & send token
 					tok *t = tok_init(type, msg);
+					if (t == NULL) {
+
+						// note error
+						#ifdef DEBUG
+						err("lex_loop: expected loop, saw '%c'", c);
+						#endif
+
+						// unrecoverable error, stop lexing
+						return NULL;
+					}
 					lex_tok_push(l, t);
 				}
 				#endif
@@ -145,6 +154,16 @@ void *lex_loop(lex *l) {
 				} else {
 					// allocate & send token
 					tok *t = tok_init(TOK_RB, msg);
+					if (t == NULL) {
+
+						// note error
+						#ifdef DEBUG
+						err("lex_loop: expected loop, saw '%c'", c);
+						#endif
+
+						// unrecoverable error, stop lexing
+						return NULL;
+					}
 					lex_tok_push(l, t);
 				}
 				#endif
@@ -163,6 +182,16 @@ void *lex_loop(lex *l) {
 				} else {
 					// allocate & send token
 					tok *t = tok_init(TOK_LB, msg);
+					if (t == NULL) {
+
+						// note error
+						#ifdef DEBUG
+						err("lex_loop: expected loop, saw '%c'", c);
+						#endif
+
+						// unrecoverable error, stop lexing
+						return NULL;
+					}
 					lex_tok_push(l, t);
 				}
 				#endif

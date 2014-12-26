@@ -19,5 +19,6 @@ typedef struct {
 } tok;
 
 tok *tok_init(int type, char *msg);
+void tok_free(tok *t);
 
 #endif // BF_TOK_H_

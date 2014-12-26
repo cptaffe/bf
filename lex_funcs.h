@@ -1,9 +1,14 @@
 
+#ifndef BF_LEX_FUNC_H_
+#define BF_LEX_FUNC_H_
+
+#include "bf.h"
+
 // data stored in lex->data
 // used in these state functions.
-
 struct lex_data {
 	int loop_count;
+	bf_stack *st;
 };
 
 typedef struct lex_data lex_data;
@@ -22,3 +27,5 @@ void *lex_op(lex *l);
 
 // lexes loops ([, ])
 void *lex_loop(lex *l);
+
+#endif // BF_LEX_FUNC_H_
