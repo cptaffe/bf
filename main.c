@@ -56,7 +56,6 @@ int main(int argc, char **argv) {
 	}
 
 	// parser, check lex_state_threadable create success
-	pthread_t parser_thread;
 	int pcs = pthread_create(&threads[1], NULL, bf_parse_threadable, (void *) p);
 	if (pcs != 0) {
 		fail("creating lex_state_threadable thread failed: %s.", strerror(errno));
