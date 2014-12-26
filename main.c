@@ -12,25 +12,19 @@
 #include "bf.h"
 #include "tok.h"
 
+// consumer
 void *stack_fmt(void *st) {
 	bf_stack *stk = (bf_stack *) st;
 	while (bf_stack_alive(stk)) {
 		// use get, acts as a queue
-		tok *t = (tok *) bf_stack_get(stk);
+		bf_tok *t = (bf_tok *) bf_stack_get(stk);
 		if (t == NULL) {
 			return (void *) 1; // err
 		}
 		printf("lex'd: %s.\n", t->msg);
-		tok_free(t);
+		bf_tok_free(t);
 		free(t->msg);
 	}
-	return NULL;
-}
-
-void *lex_state_threadable(void *lx) {
-	lex *l = (lex *) lx;
-	lex_state(l);
-	bf_stack_kill(((lex_data *) l->data)->st);
 	return NULL;
 }
 
@@ -52,13 +46,13 @@ int main(int argc, char **argv) {
 	}
 
 	// init lexer
-	lex *l = lex_init(10, stdin, lex_all);
+	lex *l = lex_init(10, stdin, bf_lex_all);
 	if (l == NULL) {
 		fail("lex alloc failed: %s.", strerror(errno));
 	}
 
 	// init lex data
-	l->data = lex_data_init();
+	l->data = (void *) bf_lex_data_init();
 	if (l->data == NULL) {
 		fail("lex_data alloc failed: %s.", strerror(errno));
 	}
@@ -86,6 +80,6 @@ int main(int argc, char **argv) {
 	}
 
 	// free lex
-	lex_data_free(l->data);
+	bf_lex_data_free(l->data);
 	lex_free(l);
 }

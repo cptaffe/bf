@@ -8,7 +8,7 @@
 #include "lex.h"
 #include "lex_funcs.h"
 
-lex_data *lex_data_init() {
+lex_data *bf_lex_data_init() {
 	lex_data *l = malloc(sizeof (lex_data));
 	if (l == NULL) {
 		return NULL;
@@ -23,19 +23,19 @@ lex_data *lex_data_init() {
 	}
 }
 
-void lex_data_free(lex_data *l) {
+void bf_lex_data_free(lex_data *l) {
 	bf_stack_free(l->st);
 	free(l);
 }
 
 // send tokens
-bool lex_tok_push(lex *l, tok *t) {
+bool bf_lex_tok_push(lex *l, bf_tok *t) {
 	bf_stack_push(((lex_data *) l->data)->st, (void *) t);
 	return true;
 }
 
 // lexes operator characters, but does not handle loops.
-void *lex_op(lex *l) {
+void *bf_lex_op(lex *l) {
 
 	int gc; // gotten char
 
@@ -79,32 +79,32 @@ void *lex_op(lex *l) {
 					return NULL; // error
 				} else {
 					// get token type from gotten char.
-					int type;
+					bf_tok_type_t type;
 					switch (gc) {
 						case '-':
-							type = TOK_MINUS;
+							type = BF_TOK_MINUS;
 							break;
 						case '+':
-							type = TOK_PLUS;
+							type = BF_TOK_PLUS;
 							break;
 						case '>':
-							type = TOK_GT;
+							type = BF_TOK_GT;
 							break;
 						case '<':
-							type = TOK_LT;
+							type = BF_TOK_LT;
 							break;
 						case '.':
-							type = TOK_DOT;
+							type = BF_TOK_DOT;
 							break;
 						case ',':
-							type = TOK_COMMA;
+							type = BF_TOK_COMMA;
 							break;
 						default:
 							fail("unknown token type, should never reach.");
 					}
 
 					// allocate & send token
-					tok *t = tok_init(type, msg);
+					bf_tok *t = bf_tok_init(type, msg);
 					if (t == NULL) {
 
 						// note error
@@ -115,19 +115,19 @@ void *lex_op(lex *l) {
 						// unrecoverable error, stop lexing
 						return NULL;
 					}
-					lex_tok_push(l, t);
+					bf_lex_tok_push(l, t);
 				}
 				#endif
 
 				// return to the default state.
-				return lex_all;
+				return bf_lex_all;
 			}
 		}
 	}
 }
 
 // lexes loop character
-void *lex_loop(lex *l) {
+void *bf_lex_loop(lex *l) {
 	char c;
 	if ((c = lex_next(l)) >= 0) {
 		lex_data *ld;
@@ -153,7 +153,7 @@ void *lex_loop(lex *l) {
 					return NULL; // error
 				} else {
 					// allocate & send token
-					tok *t = tok_init(TOK_RB, msg);
+					bf_tok *t = bf_tok_init(BF_TOK_RB, msg);
 					if (t == NULL) {
 
 						// note error
@@ -164,11 +164,11 @@ void *lex_loop(lex *l) {
 						// unrecoverable error, stop lexing
 						return NULL;
 					}
-					lex_tok_push(l, t);
+					bf_lex_tok_push(l, t);
 				}
 				#endif
 
-				return lex_all;
+				return bf_lex_all;
 			} else if (c == ']') {
 
 				// acknowledge loop end
@@ -181,7 +181,7 @@ void *lex_loop(lex *l) {
 					return NULL; // error
 				} else {
 					// allocate & send token
-					tok *t = tok_init(TOK_LB, msg);
+					bf_tok *t = bf_tok_init(BF_TOK_LB, msg);
 					if (t == NULL) {
 
 						// note error
@@ -192,11 +192,11 @@ void *lex_loop(lex *l) {
 						// unrecoverable error, stop lexing
 						return NULL;
 					}
-					lex_tok_push(l, t);
+					bf_lex_tok_push(l, t);
 				}
 				#endif
 
-				return lex_all;
+				return bf_lex_all;
 			} else {
 
 				// note error
@@ -230,14 +230,14 @@ void *lex_loop(lex *l) {
 
 // default state function,
 // lexes the initial state and returns subsequent states.
-void *lex_all(lex *l) {
+void *bf_lex_all(lex *l) {
 	char c;
 	while ((c = lex_peek(l)) >= 0) {
 		// looks for a lexable character
 		if (c == '>' || c == '<' || c == '+' || c == '-' || c == '.' || c == ',') {
-			return lex_op;
+			return bf_lex_op;
 		} else if (c == '[' || c == ']') {
-			return lex_loop;
+			return bf_lex_loop;
 		} else {
 			// ignores unknown characters
 			if (lex_next(l) < 0) { return NULL; } // error

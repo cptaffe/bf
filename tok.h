@@ -2,23 +2,23 @@
 #ifndef BF_TOK_H_
 #define BF_TOK_H_
 
-enum {
-	TOK_PLUS,
-	TOK_MINUS,
-	TOK_GT,
-	TOK_LT,
-	TOK_DOT,
-	TOK_COMMA,
-	TOK_LB,
-	TOK_RB
-};
+typedef enum {
+	BF_TOK_PLUS,
+	BF_TOK_MINUS,
+	BF_TOK_GT,
+	BF_TOK_LT,
+	BF_TOK_DOT,
+	BF_TOK_COMMA,
+	BF_TOK_LB,
+	BF_TOK_RB
+} bf_tok_type_t;
 
 typedef struct {
-	int type;
+	bf_tok_type_t type;
 	char *msg;
-} tok;
+} bf_tok;
 
-tok *tok_init(int type, char *msg);
-void tok_free(tok *t);
+bf_tok *bf_tok_init(int type, char *msg);
+void bf_tok_free(bf_tok *t);
 
 #endif // BF_TOK_H_
