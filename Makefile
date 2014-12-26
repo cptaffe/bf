@@ -1,5 +1,6 @@
 
-CFLAGS+= -Wall -g -Ilex -lpthread --std=c11
+CFLAGS+= -Wall -g -Ilex --std=c11
+LNKFLAGS=-lpthread
 
 SRC = main.c bf.c lex_funcs.c tok.c stack.c astree.c parse.c lex_threadable.c jit.c link.c
 OBJ = $(SRC:.c=.o)
@@ -13,7 +14,7 @@ BIN = bf
 all: $(BIN) test
 
 $(BIN): $(OBJ) $(LIB)
-	$(CC) $(CFLAGS) -o $(BIN) $(OBJ) $(LIB)
+	$(CC) $(CFLAGS) $(LNKFLAGS) -o $(BIN) $(OBJ) $(LIB)
 
 $(OBJ): $(HDR)
 
