@@ -13,6 +13,7 @@ bf_parse *bf_parse_init(bf_stack *st) {
 
 	p->st = st;
 	p->out = bf_stack_init();
+	p->ctn = bf_stack_init();
 	p->tree = bf_astree_init_root();
 	p->loop_count = 0;
 
@@ -23,15 +24,54 @@ void bf_parse_free(bf_parse *p) {
 	free(p);
 }
 
-// push tree onto stack
-static int shove_tree(bf_parse *p) {
-	bf_stack_push(p->out, (void *) p->tree);
+// return current tree, set self to new tree.
+bf_astree *bf_parse_emit_tree(bf_parse *p) {
+	bf_astree *t = p->tree;
 	p->tree = bf_astree_init_root();
-	if (p->tree == NULL) { return 1; }
-	return 0;
+	if (p->tree == NULL) { return NULL; }
+	return t;
 }
 
-int bf_parse_all(bf_parse *p) {
+// tok by tok parser, returns tree if full statement is ready.
+bf_astree *bf_parse_tok(bf_parse *p, bf_tok *t) {
+	// handle token
+	if (t->type == BF_TOK_LB) {
+		// account for loop
+		p->loop_count++;
+		bf_astree *tree = bf_astree_init(BF_ASTREE_LOOP, t);
+		if (tree == NULL) { return NULL; }
+		int cas = bf_astree_child_add(p->tree, tree);
+		if (cas) { return NULL; }
+
+		// push
+		bf_stack_push(p->ctn, p->tree); // save old tree ptr
+		p->tree = tree; // new tree ptr
+
+		return NULL;
+
+	} else if (t->type == BF_TOK_RB) {
+		// account for loop
+		p->loop_count--;
+		p->tree = (bf_astree *) bf_stack_pop(p->ctn); // pop old tree
+
+	} else if (t->type == BF_TOK_STE) {
+		// check that loop_count is 0
+		if (p->loop_count == 0) {
+			// save current tree to stack, begin new tree.
+			return bf_parse_emit_tree(p);
+		}
+		return NULL;
+	} else {
+		bf_astree *tree = bf_astree_init(BF_ASTREE_ID, t);
+		if (tree == NULL) { return NULL; }
+		int cas = bf_astree_child_add(p->tree, tree);
+		if (cas) { return NULL; }
+	}
+	return NULL;
+}
+
+// feeds tokens from stack to bf_parse_tok
+int bf_parse_do(bf_parse *p) {
 	while (bf_stack_alive(p->st) || !bf_stack_empty(p->st)) {
 
 		// use get, acts as a queue
@@ -44,43 +84,16 @@ int bf_parse_all(bf_parse *p) {
 			}
 		}
 
-		// handle token
-		if (t->type == BF_TOK_LB) {
-			// account for loop
-			p->loop_count++;
-			bf_astree *tree = bf_astree_init(BF_ASTREE_LOOP, t);
-			if (tree == NULL) { return 2; }
-			int cas = bf_astree_child_add(p->tree, tree);
-			if (cas) { return 3; }
-
-			// recurse
-			int pas = bf_parse_all(p);
-			if (pas) { return 4; }
-
-		} else if (t->type == BF_TOK_RB) {
-			// account for loop
-			p->loop_count--;
-			return 0;
-		} else if (t->type == BF_TOK_STE) {
-			// check that loop_count is 0
-			if (p->loop_count == 0) {
-				// save current tree to stack, begin new tree.
-				int i = shove_tree(p);
-				if (i) { return 5; }
-			}
-		} else {
-			bf_astree *tree = bf_astree_init(BF_ASTREE_ID, t);
-			if (tree == NULL) { return 6; }
-			int cas = bf_astree_child_add(p->tree, tree);
-			if (cas) { return 7; }
-		}
+		bf_astree *tr = bf_parse_tok(p, t);
+		if (tr != NULL) { bf_stack_push(p->out, (void *) tr); }
 	}
 
 	// is at a returnable point
 	if (p->loop_count == 0) {
 		if (p->tree == NULL) {
-			int i = shove_tree(p);
-			if (i) { return 8; }
+			bf_astree *t = bf_parse_emit_tree(p);
+			if (t == NULL) { return 8; }
+			bf_astree_rec_free(t);
 		}
 		return 0;
 	} else {
@@ -93,7 +106,7 @@ int bf_parse_all(bf_parse *p) {
 void *bf_parse_threadable(void *ps) {
 	bf_parse *p = (bf_parse *) ps;
 	// intptr_t avoids int -> void * err.
-	intptr_t s = bf_parse_all(p);
+	intptr_t s = bf_parse_do(p);
 	if (s) { return (void *) s; } // err
 	return NULL;
 }

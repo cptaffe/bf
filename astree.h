@@ -25,6 +25,7 @@ typedef struct bf_astree bf_astree;
 bf_astree *bf_astree_init_root();
 bf_astree *bf_astree_init(bf_astree_type_t type, void *data);
 void bf_astree_free(bf_astree* t);
+void bf_astree_rec_free(bf_astree *t);
 int bf_astree_child_add(bf_astree *t, bf_astree *c);
 int bf_astree_child_rm(bf_astree *t, int index);
 

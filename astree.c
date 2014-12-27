@@ -36,6 +36,17 @@ void bf_astree_free(bf_astree* t) {
 	free(t);
 }
 
+void bf_astree_rec_free(bf_astree *t) {
+	// free children
+	if (t->chld_num > 0) {
+		for (int i = 0; i < t->chld_num; i++) {
+			bf_astree_rec_free(t->chld[i]);
+		}
+	}
+
+	free(t);
+}
+
 int bf_astree_child_add(bf_astree *t, bf_astree *c) {
 	// realloc
 	t->chld_num++;
