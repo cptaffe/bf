@@ -8,6 +8,7 @@
 struct bf_parse {
 	int loop_count;
 	bf_stack *st;
+	bf_stack *out;
 	bf_astree *tree;
 };
 

@@ -31,4 +31,7 @@ void *bf_lex_op(lex *l);
 // lexes loops ([, ])
 void *bf_lex_loop(lex *l);
 
+// lexes newlines (\n)
+void *bf_lex_newline(lex *l);
+
 #endif // BF_LEX_FUNC_H_

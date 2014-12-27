@@ -10,7 +10,8 @@ typedef enum {
 	BF_TOK_DOT,
 	BF_TOK_COMMA,
 	BF_TOK_LB,
-	BF_TOK_RB
+	BF_TOK_RB,
+	BF_TOK_STE // statement end
 } bf_tok_type_t;
 
 typedef struct {

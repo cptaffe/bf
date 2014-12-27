@@ -36,7 +36,7 @@ static char *format(char *fmt) {
 
 // takes a string message, prints it to stderr,
 // then exits the process with a failure.
-void fail(char *fmt, ...) {
+void fail(char *fmt, ...)  {
 
 	// handle failure message
 	va_list args;

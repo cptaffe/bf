@@ -4,6 +4,17 @@
 
 #include "stack.h"
 
+static inline int mut_cond_get(bf_stack *stk) {
+	int mls = pthread_mutex_lock(&stk->mut);
+	if (mls) { return 1; }
+	while (bf_stack_empty(stk) && bf_stack_alive(stk)) {
+		int cws = pthread_cond_wait(&stk->cond, &stk->mut);
+		if (cws) { return 2; }
+	}
+	if (!bf_stack_alive(stk)) { return 3; } // die on dead
+	return 0;
+}
+
 // initialize stack
 bf_stack *bf_stack_init() {
 	// alloc
@@ -48,24 +59,22 @@ bool bf_stack_empty(bf_stack *stk) {
 // push ptr to stack
 void bf_stack_push(bf_stack *stk, void *data) {
 	// lock
-	pthread_mutex_lock(&stk->mut);
+	int mls = pthread_mutex_lock(&stk->mut);
+	if (mls) { return; }
 
 	// do work
 	stk->lnk = bf_link_push(stk->lnk, data);
 
 	// signal & unlock
-	pthread_cond_signal(&stk->cond);
 	pthread_mutex_unlock(&stk->mut);
+	pthread_cond_signal(&stk->cond);
 }
 
 // pop ptr from stack
 void *bf_stack_pop(bf_stack *stk) {
 	// lock & wait for signal
-	pthread_mutex_lock(&stk->mut);
-	while (bf_stack_empty(stk) && bf_stack_alive(stk)) {
-		pthread_cond_wait(&stk->cond, &stk->mut);
-	}
-	if (!bf_stack_alive(stk)) { return NULL; } // die on dead
+	int s = mut_cond_get(stk);
+	if (s) { return NULL; }
 
 	// get data
 	void *data = bf_link_top(stk->lnk);
@@ -79,11 +88,8 @@ void *bf_stack_pop(bf_stack *stk) {
 // get ptr from stack, without removing.
 void *bf_stack_top(bf_stack *stk) {
 	// lock & wait for signal
-	pthread_mutex_lock(&stk->mut);
-	while (bf_stack_empty(stk) && bf_stack_alive(stk)) {
-		pthread_cond_wait(&stk->cond, &stk->mut);
-	}
-	if (!bf_stack_alive(stk)) { return NULL; } // die on dead
+	int s = mut_cond_get(stk);
+	if (s) { return NULL; }
 
 	// get data
 	void *data = bf_link_top(stk->lnk);
@@ -96,11 +102,8 @@ void *bf_stack_top(bf_stack *stk) {
 // get ptr from queue, without removing.
 void *bf_stack_bottom(bf_stack *stk) {
 	// lock & wait for signal
-	pthread_mutex_lock(&stk->mut);
-	while (bf_stack_empty(stk) && bf_stack_alive(stk)) {
-		pthread_cond_wait(&stk->cond, &stk->mut);
-	}
-	if (!bf_stack_alive(stk)) { return NULL; } // die on dead
+	int s = mut_cond_get(stk);
+	if (s) { return NULL; }
 
 	// get data
 	void *data = bf_link_bottom(stk->lnk);
@@ -113,11 +116,8 @@ void *bf_stack_bottom(bf_stack *stk) {
 // get ptr from queue
 void *bf_stack_get(bf_stack *stk) {
 	// lock & wait for signal
-	pthread_mutex_lock(&stk->mut);
-	while (bf_stack_empty(stk) && bf_stack_alive(stk)) {
-		pthread_cond_wait(&stk->cond, &stk->mut);
-	}
-	if (!bf_stack_alive(stk)) { return NULL; } // die on dead
+	int s = mut_cond_get(stk);
+	if (s) { return NULL; }
 
 	// get data
 	void *data = bf_link_bottom(stk->lnk);

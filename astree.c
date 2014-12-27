@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "astree.h"
 
@@ -11,6 +12,8 @@ bf_astree *bf_astree_init_root() {
 	if (t == NULL) { return NULL; }
 
 	t->type = BF_ASTREE_ROOT;
+	t->chld_num = 0;
+	t->chld = NULL;
 
 	return t;
 }
@@ -37,9 +40,9 @@ int bf_astree_child_add(bf_astree *t, bf_astree *c) {
 	// realloc
 	t->chld_num++;
 	if (t->chld_num == 1) {
-		t->chld = malloc(sizeof(bf_astree));
+		t->chld = malloc(sizeof(bf_astree *));
 	} else {
-		t->chld = realloc(t->chld, sizeof(bf_astree) * t->chld_num);
+		t->chld = realloc(t->chld, sizeof(bf_astree *) * t->chld_num);
 	}
 	if (t->chld == NULL) {
 		// return error if errno is set, else 1.

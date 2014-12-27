@@ -1,5 +1,4 @@
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 
@@ -7,6 +6,10 @@
 #include "tok.h"
 #include "lex.h"
 #include "lex_funcs.h"
+
+#define IS_OP(c) c == '>' || c == '<' || c == '+' || c == '-' || c == '.' || c == ','
+#define IS_LOOP(c) c == '[' || c == ']'
+#define IS_NEWLINE(c) c == '\n'
 
 lex_data *bf_lex_data_init() {
 	lex_data *l = malloc(sizeof (lex_data));
@@ -29,10 +32,7 @@ void bf_lex_data_free(lex_data *l) {
 }
 
 // send tokens
-bool bf_lex_tok_push(lex *l, bf_tok *t) {
-	bf_stack_push(((lex_data *) l->data)->st, (void *) t);
-	return true;
-}
+#define bf_lex_tok_push(l, t) bf_stack_push(((lex_data *) l->data)->st, (void *) t)
 
 // lexes operator characters, but does not handle loops.
 void *bf_lex_op(lex *l) {
@@ -41,7 +41,7 @@ void *bf_lex_op(lex *l) {
 
 	// check if the current character is not an op or is an EOF.
 	// in either case, the program should not be here, error.
-	if ((gc = lex_peek(l)) < 0 || !(gc == '>' || gc == '<' || gc == '+' || gc == '-' || gc == '.' || gc == ',')) {
+	if ((gc = lex_peek(l)) < 0 || !(IS_OP(gc))) {
 
 		if (gc < -1) {
 			// unrecoverable error, stop lexing.
@@ -73,51 +73,49 @@ void *bf_lex_op(lex *l) {
 			} else {
 
 				// note lexed content
-				#ifdef DEBUG
 				char *msg;
 				if ((msg = lex_emit(l)) == NULL) {
 					return NULL; // error
-				} else {
-					// get token type from gotten char.
-					bf_tok_type_t type;
-					switch (gc) {
-						case '-':
-							type = BF_TOK_MINUS;
-							break;
-						case '+':
-							type = BF_TOK_PLUS;
-							break;
-						case '>':
-							type = BF_TOK_GT;
-							break;
-						case '<':
-							type = BF_TOK_LT;
-							break;
-						case '.':
-							type = BF_TOK_DOT;
-							break;
-						case ',':
-							type = BF_TOK_COMMA;
-							break;
-						default:
-							fail("unknown token type, should never reach.");
-					}
-
-					// allocate & send token
-					bf_tok *t = bf_tok_init(type, msg);
-					if (t == NULL) {
-
-						// note error
-						#ifdef DEBUG
-						err("lex_loop: expected loop, saw '%c'", c);
-						#endif
-
-						// unrecoverable error, stop lexing
-						return NULL;
-					}
-					bf_lex_tok_push(l, t);
 				}
-				#endif
+
+				// get token type from gotten char.
+				bf_tok_type_t type;
+				switch (gc) {
+					case '-':
+						type = BF_TOK_MINUS;
+						break;
+					case '+':
+						type = BF_TOK_PLUS;
+						break;
+					case '>':
+						type = BF_TOK_GT;
+						break;
+					case '<':
+						type = BF_TOK_LT;
+						break;
+					case '.':
+						type = BF_TOK_DOT;
+						break;
+					case ',':
+						type = BF_TOK_COMMA;
+						break;
+					default:
+						return NULL; // should never reach
+				}
+
+				// allocate & send token
+				bf_tok *t = bf_tok_init(type, msg);
+				if (t == NULL) {
+
+					// note error
+					#ifdef DEBUG
+					err("lex_loop: expected loop, saw '%c'", c);
+					#endif
+
+					// unrecoverable error, stop lexing
+					return NULL;
+				}
+				bf_lex_tok_push(l, t);
 
 				// return to the default state.
 				return bf_lex_all;
@@ -129,7 +127,7 @@ void *bf_lex_op(lex *l) {
 // lexes loop character
 void *bf_lex_loop(lex *l) {
 	char c;
-	if ((c = lex_next(l)) >= 0) {
+	if ((c = lex_next(l)) && (IS_LOOP(c))) {
 		lex_data *ld;
 		if ((ld = (lex_data *) l->data) == NULL) {
 
@@ -147,26 +145,24 @@ void *bf_lex_loop(lex *l) {
 				ld->loop_count++;
 
 				// note lexed content
-				#ifdef DEBUG
 				char *msg;
 				if ((msg = lex_emit(l)) == NULL) {
 					return NULL; // error
-				} else {
-					// allocate & send token
-					bf_tok *t = bf_tok_init(BF_TOK_RB, msg);
-					if (t == NULL) {
-
-						// note error
-						#ifdef DEBUG
-						err("lex_loop: expected loop, saw '%c'", c);
-						#endif
-
-						// unrecoverable error, stop lexing
-						return NULL;
-					}
-					bf_lex_tok_push(l, t);
 				}
-				#endif
+
+				// allocate & send token
+				bf_tok *t = bf_tok_init(BF_TOK_LB, msg);
+				if (t == NULL) {
+
+					// note error
+					#ifdef DEBUG
+					err("lex_loop: expected loop, saw '%c'", c);
+					#endif
+
+					// unrecoverable error, stop lexing
+					return NULL;
+				}
+				bf_lex_tok_push(l, t);
 
 				return bf_lex_all;
 			} else if (c == ']') {
@@ -175,37 +171,28 @@ void *bf_lex_loop(lex *l) {
 				ld->loop_count--;
 
 				// note lexed content
-				#ifdef DEBUG
 				char *msg;
 				if ((msg = lex_emit(l)) == NULL) {
 					return NULL; // error
-				} else {
-					// allocate & send token
-					bf_tok *t = bf_tok_init(BF_TOK_LB, msg);
-					if (t == NULL) {
-
-						// note error
-						#ifdef DEBUG
-						err("lex_loop: expected loop, saw '%c'", c);
-						#endif
-
-						// unrecoverable error, stop lexing
-						return NULL;
-					}
-					bf_lex_tok_push(l, t);
 				}
-				#endif
+
+				// allocate & send token
+				bf_tok *t = bf_tok_init(BF_TOK_RB, msg);
+				if (t == NULL) {
+
+					// note error
+					#ifdef DEBUG
+					err("lex_loop: expected loop, saw '%c'", c);
+					#endif
+
+					// unrecoverable error, stop lexing
+					return NULL;
+				}
+				bf_lex_tok_push(l, t);
 
 				return bf_lex_all;
 			} else {
-
-				// note error
-				#ifdef DEBUG
-				err("lex_loop: expected loop, saw '%c'", c);
-				#endif
-
-				// unrecoverable error, stop lexing.
-				return NULL;
+				return NULL; // should never reach
 			}
 		}
 	} else {
@@ -217,14 +204,52 @@ void *bf_lex_loop(lex *l) {
 			return NULL;
 		} else {
 
-			// called with EOF
+			// note error
 			#ifdef DEBUG
-			err("lex_loop: unexpected character EOF");
+			err("lex_loop: expected loop, saw '%c'", c);
 			#endif
 
 			// unrecoverable error, stop lexing.
 			return NULL;
 		}
+	}
+}
+
+// lexes newline character
+void *bf_lex_newline(lex *l) {
+	char c;
+	if ((c = lex_next(l)) == '\n') {
+
+		// note lexed content
+		char *msg;
+		if ((msg = lex_emit(l)) == NULL) {
+			return NULL; // error
+		}
+
+		// allocate & send token
+		bf_tok *t = bf_tok_init(BF_TOK_STE, msg);
+		if (t == NULL) {
+
+			// note error
+			#ifdef DEBUG
+			err("lex_newline: expected newline, saw '%c'", c);
+			#endif
+
+			// unrecoverable error, stop lexing
+			return NULL;
+		}
+		bf_lex_tok_push(l, t);
+
+		return bf_lex_all;
+	} else {
+
+		// note error
+		#ifdef DEBUG
+		err("lex_newline: expected newline, saw '%c'", c);
+		#endif
+
+		// unrecoverable error, stop lexing.
+		return NULL;
 	}
 }
 
@@ -234,10 +259,12 @@ void *bf_lex_all(lex *l) {
 	char c;
 	while ((c = lex_peek(l)) >= 0) {
 		// looks for a lexable character
-		if (c == '>' || c == '<' || c == '+' || c == '-' || c == '.' || c == ',') {
+		if (IS_OP(c)) {
 			return bf_lex_op;
-		} else if (c == '[' || c == ']') {
+		} else if (IS_LOOP(c)) {
 			return bf_lex_loop;
+		} else if (IS_NEWLINE(c)) {
+			return bf_lex_newline;
 		} else {
 			// ignores unknown characters
 			if (lex_next(l) < 0) { return NULL; } // error
