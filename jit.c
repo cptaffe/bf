@@ -23,8 +23,7 @@
 // global jit as of this moment
 bf_jit *bf_current_jit; // bad practice, but it's the only way.
 
-static void mem_handler(int sig, siginfo_t *si, void *unused)
-{
+void mem_handler(int sig, siginfo_t *si, void *unused) {
 	printf("Got SIGSEGV at address: 0x%lx\n",
 	(long) si->si_addr);
 
