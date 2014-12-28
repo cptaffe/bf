@@ -4,6 +4,8 @@
 #include <sys/mman.h>
 #include <string.h>
 
+#include <stdio.h>
+
 #include "jit.h"
 #include "jit_arch.h"
 #include "astree.h"
@@ -62,11 +64,17 @@ int bf_jit_free(bf_jit *j) {
 
 // tree by tree state mutation
 int bf_jit_emit(bf_jit *j, bf_astree *t) {
-	char inst[] = RET;
+	char inst[] = {RET, 0x0};
 	j->exec = memcpy(j->exec, inst, 1); // copy one byte
 	if (j->exec == NULL) { return 1; }
 	void(*func)(void) = (void(*)(void)) j->exec;
 	func();
+	printf("mem: ");
+	for (int i = 0; i < sizeof(inst); i++) {
+		if (inst[i] == 0) {break;}
+		printf("0x%hhx", inst[i]); // print hexadecimal char.
+	}
+	printf(".\n"); // buffer flush
 	return 0;
 }
 
