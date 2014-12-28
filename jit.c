@@ -1,24 +1,18 @@
 #include <stdlib.h>
 #include <stdint.h>
-
-// gnu I had to use mremap.
-#define _GNU_SOURCE
 #include <sys/mman.h>
-#undef _GNU_SOURCE
-
 #include <string.h>
 #include <signal.h>
-#include <limits.h> // PAGESIZE
-#include <sys/types.h> // siginfo_t
-
 #include <stdio.h>
+
+#ifndef PAGESIZE
+#include <unistd.h>
+#define PAGESIZE (getpagesize())
+#endif
 
 #include "jit.h"
 #include "jit_arch.h"
 #include "astree.h"
-
-#include <unistd.h>
-#define PAGESIZE (sysconf(_SC_PAGESIZE))
 
 #define EXEC_PAGES 2
 #define MEM_PAGES 2
@@ -34,7 +28,7 @@ void mem_handler(int sig, siginfo_t *si, void *unused) {
 	bf_jit *j = bf_current_jit;
 
 	// if sigsegv'd outside the page range.
-	if (si->si_addr > ((j->mem_pages + 1) * PAGESIZE) && ((j->mem_pages + 1) * PAGESIZE) < si->si_addr) {
+	if ((long) si->si_addr > ((j->mem_pages + 1) * PAGESIZE) && ((j->mem_pages + 1) * PAGESIZE) < (long) si->si_addr) {
 		exit(EXIT_FAILURE);
 	}
 
@@ -43,7 +37,7 @@ void mem_handler(int sig, siginfo_t *si, void *unused) {
 	if (mps != 0) { exit(EXIT_FAILURE); }
 
 	// add new page, must allocate at
-	j->mem = mremap(&j->mem, (j->mem_pages * PAGESIZE), ((j->mem_pages + 1) * PAGESIZE), PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE | MAP_FIXED, -1, 0);
+	j->mem = mmap(&j->mem[j->mem_pages * PAGESIZE], PAGESIZE, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE | MAP_FIXED, -1, 0);
 	if (j->mem == NULL) { exit(EXIT_FAILURE); }
 	j->mem_pages++;
 
