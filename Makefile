@@ -29,7 +29,7 @@ stack.o: stack.h
 astree.o: astree.h
 parse.o: parse.h bf.h
 lex_threadable.o: lex_threadable.h
-jit.o: jit.h jit_arch.h
+jit.o: jit.h jit_arch.h astree.h
 link.o: link.h
 jit.h bf.h: stack.h
 lex_funcs.h: bf.h lex/lex.h

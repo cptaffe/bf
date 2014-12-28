@@ -107,5 +107,6 @@ void *bf_parse_threadable(void *ps) {
 	// intptr_t avoids int -> void * err.
 	intptr_t s = bf_parse_do(p);
 	if (s) { return (void *) s; } // err
+	bf_stack_kill(p->out); // poison stack
 	return NULL;
 }

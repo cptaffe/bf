@@ -2,9 +2,11 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <sys/mman.h>
+#include <string.h>
 
 #include "jit.h"
 #include "jit_arch.h"
+#include "astree.h"
 
 #ifndef BF_JIT_ARCH_H_
 #error jit_arch.h not included
@@ -16,8 +18,23 @@
 // threadable consumer
 void *bf_jit_threadable(void *v) {
 	bf_jit *j = (bf_jit *) v;
-	intptr_t s = bf_jit_emit(j);
-	return (void *) s;
+
+	while (bf_stack_alive(j->st) || !bf_stack_empty(j->st)) {
+
+		// use get, acts as a queue
+		bf_astree *t = (bf_astree *) bf_stack_get(j->st);
+		if (t == NULL) {
+			if (bf_stack_alive(j->st)) {
+				return (void *) 1; // err
+			} else {
+				continue;
+			}
+		}
+
+		intptr_t s = bf_jit_emit(j, t);
+		if (s != 0) { return (void *) s; }
+	}
+	return NULL;
 }
 
 
@@ -43,7 +60,13 @@ int bf_jit_free(bf_jit *j) {
 	return 0;
 }
 
-int bf_jit_emit(bf_jit *j) {
+// tree by tree state mutation
+int bf_jit_emit(bf_jit *j, bf_astree *t) {
+	char inst[] = RET;
+	j->exec = memcpy(j->exec, inst, 1); // copy one byte
+	if (j->exec == NULL) { return 1; }
+	void(*func)(void) = (void(*)(void)) j->exec;
+	func();
 	return 0;
 }
 
