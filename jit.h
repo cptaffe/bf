@@ -2,14 +2,19 @@
 #ifndef BF_JIT_H_
 #define BF_JIT_H_
 
+#include <stdint.h>
+
 #include "stack.h"
 
 // TODO: use bitfield flags to hold options.
 
 typedef struct {
 	bf_stack *st;
-	void *exec;
-	void *mem;
+	// byte indexed
+	int exec_pages;
+	int mem_pages;
+	uint8_t *exec;
+	uint8_t *mem;
 } bf_jit;
 
 void *bf_jit_threadable(void *v);
