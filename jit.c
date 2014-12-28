@@ -14,6 +14,11 @@
 #include "jit_arch.h"
 #include "astree.h"
 
+#ifndef PAGESIZE
+#include <unistd.h> // sysconf
+#define PAGESIZE (sysconf(_SC_PAGE_SIZE))
+#endif
+
 #define EXEC_PAGES 2
 #define MEM_PAGES 2
 
@@ -34,7 +39,7 @@ static void mem_handler(int sig, siginfo_t *si, void *unused)
 	}
 
 	// remove memprotect on last page
-	int mps = memprotect(&j->mem[MEM_PAGES * PAGESIZE], PAGESIZE, PROT_READ | PROT_WRITE);
+	int mps = mprotect(&j->mem[MEM_PAGES * PAGESIZE], PAGESIZE, PROT_READ | PROT_WRITE);
 	if (mps != 0) { exit(EXIT_FAILURE); }
 
 	// add new page, must allocate at
@@ -43,7 +48,7 @@ static void mem_handler(int sig, siginfo_t *si, void *unused)
 	j->mem_pages++;
 
 	// memprotect new last page
-	int mps = memprotect(&j->mem[MEM_PAGES * PAGESIZE], PAGESIZE, PROT_NONE);
+	mps = mprotect(&j->mem[MEM_PAGES * PAGESIZE], PAGESIZE, PROT_NONE);
 	if (mps != 0) { exit(EXIT_FAILURE); }
 }
 
@@ -83,7 +88,7 @@ bf_jit *bf_jit_init(bf_stack *st) {
 	if (j->mem == NULL) { return NULL; }
 
 	// memprotect last page & set signal handler
-	int mps = memprotect(&j->mem[MEM_PAGES * PAGESIZE], PAGESIZE, PROT_NONE);
+	int mps = mprotect(&j->mem[MEM_PAGES * PAGESIZE], PAGESIZE, PROT_NONE);
 	if (mps != 0) { return NULL; }
 
 	// assign memory handler
@@ -133,5 +138,5 @@ int bf_jit_emit(bf_jit *j, bf_astree *t) {
 }
 
 #else
-#error jit.c requires glibc macros
+#error jit.c requires glibc macros such as mremap
 #endif // _GNU_SOURCE
