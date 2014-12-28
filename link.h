@@ -2,9 +2,6 @@
 #ifndef BF_LINK_H_
 #define BF_LINK_H_
 
-#include "astree.h"
-#include "stack.h"
-
 // linked list
 struct bf_link {
 	void *data;

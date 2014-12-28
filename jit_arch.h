@@ -1,5 +1,5 @@
 
-#ifdef BF_JIT_ARCH_H_
+#ifndef BF_JIT_ARCH_H_
 #define BF_JIT_ARCH_H_
 
 // define instructions for each architecture.

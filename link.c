@@ -1,8 +1,9 @@
 
 #include <stdlib.h>
+#include <stdbool.h>
 #include <errno.h>
 
-#include "stack.h"
+#include "link.h"
 
 // link insert
 bf_link *bf_link_push(bf_link *lnk, void *data) {

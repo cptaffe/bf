@@ -6,6 +6,10 @@
 #include "jit.h"
 #include "jit_arch.h"
 
+#ifndef BF_JIT_ARCH_H_
+#error jit_arch.h not included
+#else
+
 #define EXEC_SIZE 128
 #define MEM_SIZE 128
 
@@ -42,3 +46,5 @@ int bf_jit_free(bf_jit *j) {
 int bf_jit_emit(bf_jit *j) {
 	return 0;
 }
+
+#endif // BF_JIT_ARCH_H_ defined

@@ -4,7 +4,6 @@
 #include <stdint.h> // intptr_t
 
 #include "parse.h"
-#include "tok.h"
 #include "bf.h" // err
 
 bf_parse *bf_parse_init(bf_stack *st) {

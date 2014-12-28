@@ -7,6 +7,9 @@
 #include "bf.h"
 #include "lex.h"
 
+// provide threadable lex wrapper
+#include "lex_threadable.h"
+
 // data stored in lex->data
 // used in these state functions.
 struct lex_data {

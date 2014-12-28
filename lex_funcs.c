@@ -7,9 +7,9 @@
 #include "lex.h"
 #include "lex_funcs.h"
 
-#define IS_OP(c) c == '>' || c == '<' || c == '+' || c == '-' || c == '.' || c == ','
-#define IS_LOOP(c) c == '[' || c == ']'
-#define IS_NEWLINE(c) c == '\n'
+#define IS_OP(c) (c == '>' || c == '<' || c == '+' || c == '-' || c == '.' || c == ',')
+#define IS_LOOP(c) (c == '[' || c == ']')
+#define IS_NEWLINE(c) (c == '\n')
 
 lex_data *bf_lex_data_init() {
 	lex_data *l = malloc(sizeof (lex_data));
@@ -41,7 +41,7 @@ void *bf_lex_op(lex *l) {
 
 	// check if the current character is not an op or is an EOF.
 	// in either case, the program should not be here, error.
-	if ((gc = lex_peek(l)) < 0 || !(IS_OP(gc))) {
+	if ((gc = lex_peek(l)) < 0 || !IS_OP(gc)) {
 
 		if (gc < -1) {
 			// unrecoverable error, stop lexing.
@@ -127,7 +127,7 @@ void *bf_lex_op(lex *l) {
 // lexes loop character
 void *bf_lex_loop(lex *l) {
 	char c;
-	if ((c = lex_next(l)) && (IS_LOOP(c))) {
+	if ((c = lex_next(l)) && IS_LOOP(c)) {
 		lex_data *ld;
 		if ((ld = (lex_data *) l->data) == NULL) {
 
