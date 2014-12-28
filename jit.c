@@ -27,7 +27,7 @@
 bf_jit *bf_current_jit; // bad practice, but it's the only way.
 
 void mem_handler(int sig, siginfo_t *si, void *unused) {
-	printf("Got SIGSEGV at address: 0x%lx\n",
+	printf("SIGSEGV at address: 0x%lx\n",
 	(long) si->si_addr);
 
 	// elongate mmap'd memory.
@@ -88,14 +88,14 @@ bf_jit *bf_jit_init(bf_stack *st) {
 	if (j->mem == NULL) { return NULL; }
 
 	// memprotect last page & set signal handler
-	int mps = mprotect(&j->mem[MEM_PAGES * PAGESIZE], PAGESIZE, PROT_NONE);
+	int mps = mprotect(j->mem /*[MEM_PAGES * PAGESIZE]*/, PAGESIZE, PROT_NONE);
 	if (mps != 0) { return NULL; }
 
 	// assign memory handler
 	struct sigaction sa;
 	sa.sa_flags = SA_SIGINFO;
 	sigemptyset(&sa.sa_mask);
-	sa.sa_sigaction = mem_handler;
+	sa.sa_sigaction = &mem_handler;
 	int sas = sigaction(SIGSEGV, &sa, NULL);
 	if (sas) { return NULL; }
 
@@ -106,6 +106,9 @@ bf_jit *bf_jit_init(bf_stack *st) {
 
 	// globally accessible (only one instance ever.)
 	bf_current_jit = j;
+
+	// purposeful fault
+	printf("page size: %d.\n", PAGESIZE);
 
 	return j;
 }
