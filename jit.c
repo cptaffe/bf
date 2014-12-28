@@ -9,17 +9,13 @@
 #include <string.h>
 #include <signal.h>
 #include <limits.h> // PAGESIZE
+#include <sys/types.h> // siginfo_t
 
 #include <stdio.h>
 
 #include "jit.h"
 #include "jit_arch.h"
 #include "astree.h"
-
-#ifndef PAGESIZE
-#include <unistd.h> // sysconf
-#define PAGESIZE (sysconf(_SC_PAGE_SIZE))
-#endif
 
 #define EXEC_PAGES 2
 #define MEM_PAGES 2

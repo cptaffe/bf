@@ -16,10 +16,16 @@ struct bf_parse {
 
 typedef struct bf_parse bf_parse;
 
-int bf_parse_do(bf_parse *p);
-void *bf_parse_threadable(void *ps);
+// constructor & destructor
 bf_parse *bf_parse_init(bf_stack *st);
 void bf_parse_free(bf_parse *p);
+
+// threadable consumer/producer interface
+void *bf_parse_threadable(void *ps);
+int bf_parse_do(bf_parse *p);
+
+// generate by passing tokens instead of starting a thread.
+// these functions save state in between calls.
 bf_astree *bf_parse_tok(bf_parse *p, bf_tok *t);
 bf_astree *bf_parse_emit_tree(bf_parse *p);
 
