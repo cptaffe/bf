@@ -1,5 +1,5 @@
 
-CFLAGS+= -Wall -g -Ilex --std=c11
+CFLAGS+= -Wall -g -Ilex --std=c11 -D_POSIX_C_SOURCE
 LNKFLAGS=-lpthread
 
 SRC = main.c bf.c lex_funcs.c tok.c stack.c astree.c parse.c lex_threadable.c jit.c link.c
