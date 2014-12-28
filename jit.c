@@ -5,9 +5,15 @@
 #include <signal.h>
 #include <stdio.h>
 
+// OS X compatibility
 #ifndef PAGESIZE
 #include <unistd.h>
 #define PAGESIZE (getpagesize())
+#endif
+
+// Linux compatibiity
+#ifndef MAP_ANON
+#define MAP_ANON MAP_ANONYMOUS
 #endif
 
 #include "jit.h"
