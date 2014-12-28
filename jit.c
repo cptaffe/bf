@@ -17,6 +17,9 @@
 #include "jit_arch.h"
 #include "astree.h"
 
+#include <unistd.h>
+#define PAGESIZE (sysconf(_SC_PAGESIZE))
+
 #define EXEC_PAGES 2
 #define MEM_PAGES 2
 
