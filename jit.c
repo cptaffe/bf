@@ -1,9 +1,11 @@
-
-#ifdef _GNU_SOURCE
-
 #include <stdlib.h>
 #include <stdint.h>
+
+// gnu I had to use mremap.
+#define _GNU_SOURCE
 #include <sys/mman.h>
+#undef _GNU_SOURCE
+
 #include <string.h>
 #include <signal.h>
 #include <limits.h> // PAGESIZE
@@ -136,7 +138,3 @@ int bf_jit_emit(bf_jit *j, bf_astree *t) {
 	printf(".\n"); // buffer flush
 	return 0;
 }
-
-#else
-#error jit.c requires glibc macros such as mremap
-#endif // _GNU_SOURCE
