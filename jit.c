@@ -26,20 +26,19 @@
 // global jit as of this moment
 bf_jit *bf_current_jit; // bad practice, but it's the only way.
 
-void mem_handler(int sig, siginfo_t *si, void *unused) {
-	printf("SIGSEGV at address: 0x%lx\n",
-	(long) si->si_addr);
+void mem_handler(int sig, siginfo_t *si, void *deprecated) {
+	fprintf(stderr, "SIGSEGV at address: %p\n", si->si_addr);
 
 	// elongate mmap'd memory.
 	bf_jit *j = bf_current_jit;
 
 	// if sigsegv'd outside the page range.
-	if ((long) si->si_addr > ((j->mem_pages + 1) * PAGESIZE) && ((j->mem_pages + 1) * PAGESIZE) < (long) si->si_addr) {
+	if ((long) si->si_addr > ((j->mem_pages + 1) * PAGESIZE) || (j->mem_pages * PAGESIZE) < (long) si->si_addr) {
 		exit(EXIT_FAILURE);
 	}
 
-	// remove memprotect on last page
-	int mps = mprotect(&j->mem[MEM_PAGES * PAGESIZE], PAGESIZE, PROT_READ | PROT_WRITE);
+	// memprotect last page
+	int mps = mprotect(&j->mem[(j->mem_pages) * PAGESIZE], PAGESIZE, PROT_READ | PROT_WRITE);
 	if (mps != 0) { exit(EXIT_FAILURE); }
 
 	// add new page, must allocate at
@@ -48,7 +47,7 @@ void mem_handler(int sig, siginfo_t *si, void *unused) {
 	j->mem_pages++;
 
 	// memprotect new last page
-	mps = mprotect(&j->mem[MEM_PAGES * PAGESIZE], PAGESIZE, PROT_NONE);
+	mps = mprotect(&j->mem[(j->mem_pages + 1) * PAGESIZE], PAGESIZE, PROT_NONE);
 	if (mps != 0) { exit(EXIT_FAILURE); }
 }
 
@@ -83,16 +82,19 @@ bf_jit *bf_jit_init(bf_stack *st) {
 	j->st = st;
 
 	// allocate MEM_PAGES pages.
-	j->mem_pages = MEM_PAGES;
+	j->mem_pages = MEM_PAGES + 1;
 	j->mem = mmap(NULL, (MEM_PAGES + 1) * PAGESIZE, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
 	if (j->mem == NULL) { return NULL; }
 
 	// memprotect last page & set signal handler
-	int mps = mprotect(j->mem /*[MEM_PAGES * PAGESIZE]*/, PAGESIZE, PROT_NONE);
-	if (mps != 0) { return NULL; }
+	int mps = mprotect(&j->mem[MEM_PAGES * PAGESIZE], PAGESIZE, PROT_NONE);
+	if (mps != 0) { printf("can't mprotect\n"); return NULL; }
+
+	fprintf(stderr, "mprotected: %p\n", &j->mem[MEM_PAGES * PAGESIZE]);
 
 	// assign memory handler
 	struct sigaction sa;
+	memset(&sa, 0, sizeof(sa));
 	sa.sa_flags = SA_SIGINFO;
 	sigemptyset(&sa.sa_mask);
 	sa.sa_sigaction = &mem_handler;
@@ -104,20 +106,23 @@ bf_jit *bf_jit_init(bf_stack *st) {
 	j->exec = mmap(NULL, EXEC_PAGES * PAGESIZE, PROT_EXEC | PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
 	if (j->exec == NULL) { return NULL; }
 
-	// globally accessible (only one instance ever.)
+	// globally accessible (only one instance ever)
 	bf_current_jit = j;
 
 	// purposeful fault
-	printf("page size: %d.\n", PAGESIZE);
+	fprintf(stderr, "page size: %d.\n", PAGESIZE);
+
+	// test protectedness
+	memset(j->mem, 0, j->mem_pages * PAGESIZE);
 
 	return j;
 }
 
 int bf_jit_free(bf_jit *j) {
-	int mus = munmap(j->exec, EXEC_PAGES * PAGESIZE);
+	int mus = munmap(j->exec, j->exec_pages * PAGESIZE);
 	if (mus) { return mus; }
 
-	mus = munmap(j->mem, (MEM_PAGES + 1) * PAGESIZE);
+	mus = munmap(j->mem, j->mem_pages * PAGESIZE);
 	if (mus) { return mus; }
 
 	free(j);
