@@ -9,7 +9,7 @@
 
 #include "lex.h"
 #include "parse.h"
-#include "jit.h"
+#include "bytecode.h"
 #include "lex_funcs.h"
 #include "bf.h"
 #include "tok.h"
@@ -50,8 +50,8 @@ int main(int argc, char **argv) {
 	}
 
 	// init jit
-	bf_jit *j = bf_jit_init(p->out);
-	if (j == NULL) {
+	bf_bc *b = bf_bc_init(p->out);
+	if (b == NULL) {
 		fail("jit alloc failed: %s.", strerror(errno));
 	}
 
@@ -62,15 +62,15 @@ int main(int argc, char **argv) {
 		fail("creating lex_state_threadable thread failed: %s.", strerror(lstcs));
 	}
 
-	// parser, check lex_state_threadable create success
+	// parser, check parse_state_threadable create success
 	int pcs = pthread_create(&threads[1], NULL, bf_parse_threadable, (void *) p);
 	if (pcs) {
 		fail("creating bf_parse_threadable thread failed: %s.", strerror(pcs));
 	}
 
-	// parser, check lex_state_threadable create success
-	int jcs = pthread_create(&threads[1], NULL, bf_jit_threadable, (void *) j);
-	if (jcs) {
+	// btecode emittance
+	int bcs = pthread_create(&threads[1], NULL, bf_bc_threadable, (void *) b);
+	if (bcs) {
 		fail("creating bf_jit_threadable thread failed: %s.", strerror(pcs));
 	}
 

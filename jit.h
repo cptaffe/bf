@@ -9,8 +9,8 @@
 // TODO: use bitfield flags to hold options.
 
 typedef struct {
-	bf_stack *st;
 	// byte indexed
+	int exec_pos;
 	int exec_pages;
 	int mem_pages;
 	uint8_t *exec;
