@@ -33,7 +33,7 @@ int main(int argc, char **argv) {
 	}
 
 	// init lexer
-	lex *l = lex_init(10, stdin, bf_lex_all);
+	lex *l __attribute__((cleanup(lex_free_c))) = lex_init(10, stdin, bf_lex_all);
 	if (l == NULL) {
 		fail("lex alloc failed: %s.", strerror(errno));
 	}
@@ -45,7 +45,7 @@ int main(int argc, char **argv) {
 	}
 
 	// init parser
-	bf_parse *p = bf_parse_init(((lex_data *) l->data)->st);
+	bf_parse *p __attribute__((cleanup(bf_parse_free_c))) = bf_parse_init(((bf_lex_data *) l->data)->st);
 	if (p == NULL) {
 		fail("parse alloc failed: %s.", strerror(errno));
 	}
@@ -53,7 +53,7 @@ int main(int argc, char **argv) {
 	// init jit
 	int bfcfd = open("out.bfc", O_CREAT | O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 	if (bfcfd < 0) { fail("out.bfc open failed: %s.", strerror(errno)); }
-	bf_bc *b = bf_bc_init(p->out, bfcfd);
+	bf_bc *b __attribute__((cleanup(bf_bc_free_c))) = bf_bc_init(p->out, bfcfd);
 	if (b == NULL) {
 		fail("bc alloc failed: %s.", strerror(errno));
 	}
@@ -91,11 +91,4 @@ int main(int argc, char **argv) {
 
 	// free lex
 	bf_lex_data_free(l->data);
-	lex_free(l);
-
-	// free parse
-	bf_parse_free(p);
-
-	// free bytecode emitter
-	bf_bc_free(b);
 }

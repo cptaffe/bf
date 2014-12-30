@@ -20,6 +20,9 @@ typedef struct bf_parse bf_parse;
 bf_parse *bf_parse_init(bf_stack *st);
 void bf_parse_free(bf_parse *p);
 
+// cleanup attribute compatible
+static inline void bf_parse_free_c(bf_parse **p) { bf_parse_free(*p); }
+
 // threadable consumer/producer interface
 void *bf_parse_threadable(void *ps);
 int bf_parse_do(bf_parse *p);

@@ -11,8 +11,8 @@
 #define IS_LOOP(c) (c == '[' || c == ']')
 #define IS_NEWLINE(c) (c == '\n')
 
-lex_data *bf_lex_data_init() {
-	lex_data *l = malloc(sizeof (lex_data));
+bf_lex_data *bf_lex_data_init() {
+	bf_lex_data *l = malloc(sizeof (bf_lex_data));
 	if (l == NULL) {
 		return NULL;
 	} else {
@@ -26,13 +26,13 @@ lex_data *bf_lex_data_init() {
 	}
 }
 
-void bf_lex_data_free(lex_data *l) {
+void bf_lex_data_free(bf_lex_data *l) {
 	bf_stack_free(l->st);
 	free(l);
 }
 
 // send tokens
-#define bf_lex_tok_push(l, t) bf_stack_push(((lex_data *) l->data)->st, (void *) t)
+#define bf_lex_tok_push(l, t) bf_stack_push(((bf_lex_data *) l->data)->st, (void *) t)
 
 // lexes operator characters, but does not handle loops.
 void *bf_lex_op(lex *l) {
@@ -128,8 +128,8 @@ void *bf_lex_op(lex *l) {
 void *bf_lex_loop(lex *l) {
 	char c;
 	if ((c = lex_next(l)) && IS_LOOP(c)) {
-		lex_data *ld;
-		if ((ld = (lex_data *) l->data) == NULL) {
+		bf_lex_data *ld;
+		if ((ld = (bf_lex_data *) l->data) == NULL) {
 
 			// note error
 			#ifdef DEBUG

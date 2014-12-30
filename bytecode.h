@@ -40,4 +40,6 @@ int bf_bc_gen(bf_bc *bc, bf_astree *t);
 void *bf_bc_threadable(void *v);
 int bf_bc_emit(bf_bc *b, bf_astree *t);
 
+static inline void bf_bc_free_c(bf_bc **bc) { bf_bc_free(*bc); }
+
 #endif // BF_BYTECODE_H_

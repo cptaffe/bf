@@ -12,16 +12,16 @@
 
 // data stored in lex->data
 // used in these state functions.
-struct lex_data {
+typedef struct {
 	int loop_count;
 	bf_stack *st;
-};
+} bf_lex_data;
 
-typedef struct lex_data lex_data;
+bf_lex_data *bf_lex_data_init();
+void bf_lex_data_free(bf_lex_data *l);
 
-lex_data *bf_lex_data_init();
-
-void bf_lex_data_free(lex_data *l);
+// cleanup attribute compatible
+static inline void bf_lex_data_free_c(bf_lex_data **ld) { bf_lex_data_free(*ld); }
 
 // function signature for state functions
 

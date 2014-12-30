@@ -12,19 +12,21 @@
 // OS X compatibility
 #ifndef PAGESIZE
 #include <unistd.h>
-#define PAGESIZE (getpagesize())
+#define PAGESIZE ((intptr_t) getpagesize())
 #endif
 
 #ifndef MAP_ANONYMOUS
 #define MAP_ANONYMOUS MAP_ANON
 #endif
 
-#define MEM_PAGES 1
+#define MEM_PAGES ((intptr_t) (1024 * 1024) / (PAGESIZE / 1024))
 
 // bytecode emitter init
 bf_bc *bf_bc_init(bf_stack *st, int fd) {
 	bf_bc *b = malloc(sizeof(bf_bc));
 	if (b == NULL) { return NULL; }
+
+	err("allocating %ld.", MEM_PAGES * PAGESIZE);
 
 	// mmap file
 	if (fd < 0) {
