@@ -65,7 +65,7 @@ static inline ssize_t ret(uint8_t *mem) {
 static inline ssize_t gen(uint8_t *mem, bf_astree *t) {
 	// null tree
 	if (t == NULL || (t->type == BF_ASTREE_ROOT && t->chld_num == 0)) {
-		return ret(mem);
+		return 0;
 	}
 
 	size_t len = 0;
@@ -90,7 +90,7 @@ static inline ssize_t gen(uint8_t *mem, bf_astree *t) {
 			} else if (tok->type == BF_TOK_COMMA) {
 				mem[len] = 0x6; len++; // assign one byte
 			} else {
-				printf("unknown id.\n");
+				err("unknown id.");
 			}
 		} else if (t->type == BF_ASTREE_LOOP) {
 			size_t clen = len;
@@ -105,7 +105,7 @@ static inline ssize_t gen(uint8_t *mem, bf_astree *t) {
 			void *s = memmove(&mem[len], &ml, sizeof(ml)); // copy 8 bytes
 			if (!s) { return -1; }
 			len += sizeof(ml);
-			printf("loop from %lu to %lu\n", clen, len);
+			err("loop from %lu to %lu", clen, len);
 		}
 	} else {
 		for (int i = 0; i < t->chld_num; i++) {

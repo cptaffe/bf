@@ -85,7 +85,7 @@ int main(int argc, char **argv) {
 			// TODO: why does pthread[1] fail with "No such process"?
 			// err("joining pthread #%d thread failed: %s.", i, strerror(pjs));
 		} else if (ths) {
-			err("pthread returned error #%d.", ths);
+			err("pthread returned error code %d.", ths);
 		}
 	}
 
