@@ -18,7 +18,7 @@ typedef struct {
 } bf_jit;
 
 void *bf_jit_threadable(void *v);
-bf_jit *bf_jit_init(bf_stack *st);
+bf_jit *bf_jit_init(void *bc);
 int bf_jit_free(bf_jit *j);
 int bf_jit_emit();
 

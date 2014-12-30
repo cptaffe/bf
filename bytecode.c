@@ -2,45 +2,47 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <sys/mman.h>
+#include <unistd.h>
 
 #include "bytecode.h"
 #include "tok.h"
 
-#define MEMSIZE 100
+// OS X compatibility
+#ifndef PAGESIZE
+#include <unistd.h>
+#define PAGESIZE (getpagesize())
+#endif
 
-bf_bc *bf_bc_init(bf_stack *st) {
+#ifndef MAP_ANONYMOUS
+#define MAP_ANONYMOUS MAP_ANON
+#endif
+
+#define MEM_PAGES 1
+
+// bytecode emitter init
+bf_bc *bf_bc_init(bf_stack *st, int fd) {
 	bf_bc *b = malloc(sizeof(bf_bc));
-	b->bc = malloc(MEMSIZE);
+	if (b == NULL) { return NULL; }
+	if (fd < 0) {
+		b->bc = mmap(NULL, MEM_PAGES * PAGESIZE, PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+	} else {
+		b->fd = fd;
+		ftruncate(b->fd, MEM_PAGES * PAGESIZE);
+		b->bc = mmap(NULL, MEM_PAGES * PAGESIZE, PROT_WRITE, MAP_SHARED, b->fd, 0);
+	}
+	if (b->bc == MAP_FAILED) { return NULL; }
 	b->pos = 0;
+
 	b->st = st;
 	return b;
 }
 
+// bytecode emitter free
 void bf_bc_free(bf_bc *b) {
-	free(b->bc);
+	munmap(b->bc, MEM_PAGES * PAGESIZE);
+	ftruncate(b->fd, b->pos);
 	free(b);
-}
-
-// threadable consumer
-void *bf_bc_threadable(void *v) {
-	bf_bc *b = (bf_bc *) v;
-
-	while (bf_stack_alive(b->st) || !bf_stack_empty(b->st)) {
-
-		// use get, acts as a queue
-		bf_astree *t = (bf_astree *) bf_stack_get(b->st);
-		if (t == NULL) {
-			if (bf_stack_alive(b->st)) {
-				return (void *) 1; // err
-			} else {
-				continue;
-			}
-		}
-
-		intptr_t s = bf_bc_emit(b, t);
-		if (s != 0) { return (void *) s; }
-	}
-	return NULL;
 }
 
 static inline size_t ret(uint8_t *mem) {
@@ -62,25 +64,21 @@ static inline size_t gen(uint8_t *mem, bf_astree *t) {
 			if (tok->type == BF_TOK_PLUS) {
 				mem[len] = BF_BC_MUT; len++; // assign one byte
 				int64_t ml = strlen(tok->msg);
-				printf("ml: %lld, %lu\n", ml, sizeof(ml));
 				memmove(&mem[len], &ml, sizeof(ml)); // copy 8 bytes
 				len += sizeof(ml);
 			} else if (tok->type == BF_TOK_MINUS) {
 				mem[len] = BF_BC_MUT; len++; // assign one byte
 				int64_t ml = -strlen(tok->msg);
-				printf("ml: %lld, %lu\n", ml, sizeof(ml));
 				memmove(&mem[len], &ml, sizeof(ml)); // copy 8 bytes
 				len += sizeof(ml);
 			} else if (tok->type == BF_TOK_GT) {
 				mem[len] = BF_BC_AMUT; len++; // assign one byte
 				int64_t ml = strlen(tok->msg);
-				printf("ml: %lld, %lu\n", ml, sizeof(ml));
 				memmove(&mem[len], &ml, sizeof(ml)); // copy 8 bytes
 				len += sizeof(ml);
 			} else if (tok->type == BF_TOK_LT) {
 				mem[len] = BF_BC_AMUT; len++; // assign one byte
 				int64_t ml = -strlen(tok->msg);
-				printf("ml: %lld, %lu\n", ml, sizeof(ml));
 				memmove(&mem[len], &ml, sizeof(ml)); // copy 8 bytes
 				len += sizeof(ml);
 			} else if (tok->type == BF_TOK_DOT) {
@@ -96,15 +94,41 @@ static inline size_t gen(uint8_t *mem, bf_astree *t) {
 				len += gen(&mem[len], t->chld[i]);
 			}
 			// insert loop instruction using clen
+			mem[len] = BF_BC_JMP; len++; // assign one byte
+			int64_t ml = (len - clen);
+			memmove(&mem[len], &ml, sizeof(ml)); // copy 8 bytes
+			len += sizeof(ml);
 			printf("loop from %lu to %lu\n", clen, len);
 		}
 	} else {
 		for (int i = 0; i < t->chld_num; i++) {
 			len += gen(&mem[len], t->chld[i]);
 		}
-		len += ret(&mem[len]);
 	}
 	return len;
+}
+
+// threadable consumer
+void *bf_bc_threadable(void *v) {
+	bf_bc *b = (bf_bc *) v;
+
+	while (bf_stack_alive(b->st) || !bf_stack_empty(b->st)) {
+
+		// use get, acts as a queue
+		bf_astree *t = (bf_astree *) bf_stack_get(b->st);
+		if (t == NULL) {
+			if (bf_stack_alive(b->st)) {
+				return (void *) 1; // err
+			} else {
+				continue;
+			}
+		}
+
+		intptr_t s = bf_bc_emit(b, t);
+		if (s != 0) { return (void *) s; }
+	}
+	b->pos += ret(&b->bc[b->pos]);
+	return NULL;
 }
 
 // generate bytecode

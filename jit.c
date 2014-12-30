@@ -25,7 +25,7 @@
 #define EXEC_PAGES 1
 #define MEM_PAGES 1
 
-bf_jit *bf_jit_init() {
+bf_jit *bf_jit_init(void *bc) {
 	// alloc
 	bf_jit *j = malloc(sizeof(bf_jit));
 	if (j == NULL) { return NULL; }

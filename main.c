@@ -6,6 +6,7 @@
 #include <string.h> // strerror
 #include <pthread.h> // threading
 #include <sys/mman.h> // memory mapping for code generation and execution
+#include <fcntl.h>
 
 #include "lex.h"
 #include "parse.h"
@@ -50,9 +51,11 @@ int main(int argc, char **argv) {
 	}
 
 	// init jit
-	bf_bc *b = bf_bc_init(p->out);
+	int bfcfd = open("out.bfc", O_CREAT | O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+	if (bfcfd < 0) { fail("out.bfc open failed: %s.", strerror(errno)); }
+	bf_bc *b = bf_bc_init(p->out, bfcfd);
 	if (b == NULL) {
-		fail("jit alloc failed: %s.", strerror(errno));
+		fail("bc alloc failed: %s.", strerror(errno));
 	}
 
 	// lexer state machine thread, check lex_state_threadable create success
@@ -92,4 +95,7 @@ int main(int argc, char **argv) {
 
 	// free parse
 	bf_parse_free(p);
+
+	// free bytecode emitter
+	bf_bc_free(b);
 }

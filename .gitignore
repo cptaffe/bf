@@ -31,3 +31,5 @@
 # binary
 /bf
 log.txt
+# bytecode
+*.bfc
