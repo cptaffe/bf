@@ -7,6 +7,7 @@
 
 #include "bytecode.h"
 #include "tok.h"
+#include "bf.h" // err
 
 // OS X compatibility
 #ifndef PAGESIZE
@@ -24,6 +25,8 @@
 bf_bc *bf_bc_init(bf_stack *st, int fd) {
 	bf_bc *b = malloc(sizeof(bf_bc));
 	if (b == NULL) { return NULL; }
+
+	// mmap file
 	if (fd < 0) {
 		b->bc = mmap(NULL, MEM_PAGES * PAGESIZE, PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 	} else {
@@ -45,12 +48,21 @@ void bf_bc_free(bf_bc *b) {
 	free(b);
 }
 
-static inline size_t ret(uint8_t *mem) {
+static inline int write_num(void *mem, int64_t num, size_t size, size_t *len) {
+	void *s = memmove(mem, &num, size); // copy 8 bytes
+	if (s == NULL) { return 1; }
+	*len += size;
+	return 0;
+}
+
+// returns size or negative value for failure
+static inline ssize_t ret(uint8_t *mem) {
 	mem[0] = 0x0;
 	return 1;
 }
 
-static inline size_t gen(uint8_t *mem, bf_astree *t) {
+// returns size or negative value for failure
+static inline ssize_t gen(uint8_t *mem, bf_astree *t) {
 	// null tree
 	if (t == NULL || (t->type == BF_ASTREE_ROOT && t->chld_num == 0)) {
 		return ret(mem);
@@ -63,24 +75,16 @@ static inline size_t gen(uint8_t *mem, bf_astree *t) {
 			bf_tok *tok = (bf_tok *) t->data;
 			if (tok->type == BF_TOK_PLUS) {
 				mem[len] = BF_BC_MUT; len++; // assign one byte
-				int64_t ml = strlen(tok->msg);
-				memmove(&mem[len], &ml, sizeof(ml)); // copy 8 bytes
-				len += sizeof(ml);
+				if (write_num(&mem[len], strlen(tok->msg), sizeof(int64_t), &len)) { return -1; }
 			} else if (tok->type == BF_TOK_MINUS) {
 				mem[len] = BF_BC_MUT; len++; // assign one byte
-				int64_t ml = -strlen(tok->msg);
-				memmove(&mem[len], &ml, sizeof(ml)); // copy 8 bytes
-				len += sizeof(ml);
+				if (write_num(&mem[len], -strlen(tok->msg), sizeof(int64_t), &len)) { return -1; }
 			} else if (tok->type == BF_TOK_GT) {
 				mem[len] = BF_BC_AMUT; len++; // assign one byte
-				int64_t ml = strlen(tok->msg);
-				memmove(&mem[len], &ml, sizeof(ml)); // copy 8 bytes
-				len += sizeof(ml);
+				if (write_num(&mem[len], strlen(tok->msg), sizeof(int64_t), &len)) { return -1; }
 			} else if (tok->type == BF_TOK_LT) {
 				mem[len] = BF_BC_AMUT; len++; // assign one byte
-				int64_t ml = -strlen(tok->msg);
-				memmove(&mem[len], &ml, sizeof(ml)); // copy 8 bytes
-				len += sizeof(ml);
+				if (write_num(&mem[len], -strlen(tok->msg), sizeof(int64_t), &len)) { return -1; }
 			} else if (tok->type == BF_TOK_DOT) {
 				mem[len] = 0x5; len++; // assign one byte
 			} else if (tok->type == BF_TOK_COMMA) {
@@ -91,21 +95,26 @@ static inline size_t gen(uint8_t *mem, bf_astree *t) {
 		} else if (t->type == BF_ASTREE_LOOP) {
 			size_t clen = len;
 			for (int i = 0; i < t->chld_num; i++) {
-				len += gen(&mem[len], t->chld[i]);
+				ssize_t s = gen(&mem[len], t->chld[i]);
+				if (s < 0) { return -1; }
+				len += s;
 			}
 			// insert loop instruction using clen
 			mem[len] = BF_BC_JMP; len++; // assign one byte
 			int64_t ml = (len - clen);
-			memmove(&mem[len], &ml, sizeof(ml)); // copy 8 bytes
+			void *s = memmove(&mem[len], &ml, sizeof(ml)); // copy 8 bytes
+			if (!s) { return -1; }
 			len += sizeof(ml);
 			printf("loop from %lu to %lu\n", clen, len);
 		}
 	} else {
 		for (int i = 0; i < t->chld_num; i++) {
-			len += gen(&mem[len], t->chld[i]);
+			ssize_t s = gen(&mem[len], t->chld[i]);
+			if (s < 0) { return -1; }
+			len += s;
 		}
 	}
-	return len;
+	return (ssize_t) len;
 }
 
 // threadable consumer
@@ -118,6 +127,7 @@ void *bf_bc_threadable(void *v) {
 		bf_astree *t = (bf_astree *) bf_stack_get(b->st);
 		if (t == NULL) {
 			if (bf_stack_alive(b->st)) {
+				err("bf_stack_get returned error.");
 				return (void *) 1; // err
 			} else {
 				continue;
@@ -125,7 +135,10 @@ void *bf_bc_threadable(void *v) {
 		}
 
 		intptr_t s = bf_bc_emit(b, t);
-		if (s != 0) { return (void *) s; }
+		if (s != 0) {
+			err("bf_bc_emit returned error code %ld.", s);
+			return (void *) s;
+		}
 	}
 	b->pos += ret(&b->bc[b->pos]);
 	return NULL;
@@ -133,13 +146,15 @@ void *bf_bc_threadable(void *v) {
 
 // generate bytecode
 int bf_bc_gen(bf_bc *b, bf_astree *t) {
-	b->pos += gen(&b->bc[b->pos], t);
+	ssize_t s = gen(&b->bc[b->pos], t);
+	if (s < 0) { return 1; }
+	b->pos += s;
 	return 0;
 }
 
 // tree by tree state mutation
 int bf_bc_emit(bf_bc *b, bf_astree *t) {
-	bf_bc_gen(b, t);
+	if (bf_bc_gen(b, t)) { return 1; }
 	printf("len: %d\n", b->pos);
 
 	// execute machine instructions
