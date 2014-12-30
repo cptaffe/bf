@@ -6,9 +6,9 @@
 
 // awesome macros which print the file and line number which these
 // calls originated from.
-#define fail(...) ({char *str; asprintf(&str, __VA_ARGS__); bf_fail("%s:%d: %s", __FILE__, __LINE__, str);})
+#define fail(...) ({char *_____str; asprintf(&_____str, __VA_ARGS__); bf_fail("%s:%d: %s", __FILE__, __LINE__, _____str);})
 
-#define err(...) ({char *str; asprintf(&str, __VA_ARGS__); bf_err("%s:%d: %s", __FILE__, __LINE__, str);})
+#define err(...) ({char *_____str; asprintf(&_____str, __VA_ARGS__); bf_err("%s:%d: %s", __FILE__, __LINE__, _____str);})
 
 // log error and gracefully fail.
 void bf_fail(char *msg, ...);

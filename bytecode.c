@@ -125,7 +125,7 @@ void *bf_bc_threadable(void *v) {
 
 		// use get, acts as a queue
 		bf_astree *t = (bf_astree *) bf_stack_get(b->st);
-		if (t == NULL) {
+		if (!t) {
 			if (bf_stack_alive(b->st)) {
 				err("bf_stack_get returned error.");
 				return (void *) 1; // err
@@ -155,17 +155,37 @@ int bf_bc_gen(bf_bc *b, bf_astree *t) {
 // tree by tree state mutation
 int bf_bc_emit(bf_bc *b, bf_astree *t) {
 	if (bf_bc_gen(b, t)) { return 1; }
-	printf("len: %d\n", b->pos);
+	err("len: %d", b->pos);
 
 	// execute machine instructions
 	//((void(*)(void)) j->exec)();
 
 	// print instructions
-	printf("exec'd: ");
-	for (int i = 0; i < b->pos; i++) {
-		printf("0x%hhx", b->bc[i]); // print hexadecimal char.
+	char *str = malloc(1);
+	if (!str) {
+		err("malloc failed.");
+		return 1;
 	}
-	printf(".\n"); // buffer flush
+	int j = 0;
+	for (int i = 0; i < b->pos; i++) {
+		char *msg;
+		asprintf(&msg, "0x%hhx", b->bc[i]); // print hexadecimal char.
+		size_t len = strlen(msg);
+		str = realloc(str, j + len);
+		if (!str) {
+			err("realloc failed.");
+			return 1;
+		}
+		void *s = memcpy(&str[j], msg, len);
+		if (!s) {
+			err("memcpy failed.");
+			return 1;
+		}
+		j += len;
+	}
+	realloc(str, j + 1);
+	str[j] = 0; // null terminate
+	err("exec'd: %s.", str);
 
 	return 0;
 }
