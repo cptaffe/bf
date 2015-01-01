@@ -6,7 +6,6 @@
 #include <stdbool.h>
 
 #include "stack.h"
-#include "astree.h"
 #include "tok.h"
 
 // TODO: use bitfield flags to hold options.

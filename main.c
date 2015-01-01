@@ -9,7 +9,6 @@
 #include <fcntl.h>
 
 #include "lex.h"
-#include "parse.h"
 #include "jit.h"
 #include "lex_funcs.h"
 #include "bf.h"
@@ -73,6 +72,6 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	// free lex
+	// free lex data
 	bf_lex_data_free(l->data);
 }
