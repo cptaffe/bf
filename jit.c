@@ -149,7 +149,7 @@ int bf_jit_emit(bf_jit *j, bf_tok *t) {
 		} else if (t->type == BF_TOK_RB) {
 			j->loop_count--;
 			if (j->loop_count < 0) { return 1; }
-			int num = (int) bf_stack_pop(j->loop_st);
+			int num = (int) (intptr_t) bf_stack_pop(j->loop_st);
 			// emit only if looping something
 			if (j->exec_pos - num) {
 				emit_mov_rsi_rcx(j); // move current to rcx
