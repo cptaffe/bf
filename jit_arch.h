@@ -18,7 +18,7 @@
 #define MOV_64 0x48, 0xbe
 
 // mov <8 bytes>, %rax
-#define MOV_64_RAX 0x48, 0xa1
+#define MOV_64_RAX 0x48, 0xb8
 
 // mov <8 bytes>, %rdi
 #define MOV_64_RDI 0x48, 0xbf

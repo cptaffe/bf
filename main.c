@@ -41,39 +41,28 @@ int main(int argc, char **argv) {
 		fail("lex_data alloc failed: %s.", strerror(errno));
 	}
 
-	// init parser
-	bf_parse *p __attribute__((cleanup(bf_parse_free_c))) = bf_parse_init(((bf_lex_data *) l->data)->st);
-	if (p == NULL) {
-		fail("parse alloc failed: %s.", strerror(errno));
-	}
-
 	// init jit
-	bf_jit *j __attribute__((cleanup(bf_jit_free_c))) = bf_jit_init(p->out);
+	bf_jit *j __attribute__((cleanup(bf_jit_free_c))) = bf_jit_init(((bf_lex_data *) l->data)->st);
 	if (j == NULL) {
 		fail("j alloc failed: %s.", strerror(errno));
 	}
 
 	// lexer state machine thread, check lex_state_threadable create success
-	pthread_t threads[3];
+	const int threads_len = 2;
+	pthread_t threads[threads_len];
 	int lstcs = pthread_create(&threads[0], NULL, lex_state_threadable, (void *) l);
 	if (lstcs) {
 		fail("creating lex_state_threadable thread failed: %s.", strerror(lstcs));
 	}
 
-	// parser, check parse_state_threadable create success
-	int pcs = pthread_create(&threads[1], NULL, bf_parse_threadable, (void *) p);
-	if (pcs) {
-		fail("creating bf_parse_threadable thread failed: %s.", strerror(pcs));
-	}
-
-	// btecode emittance
+	// jit machine
 	int jcs = pthread_create(&threads[1], NULL, bf_jit_threadable, (void *) j);
 	if (jcs) {
-		fail("creating bf_jit_threadable thread failed: %s.", strerror(pcs));
+		fail("creating bf_jit_threadable thread failed: %s.", strerror(jcs));
 	}
 
 	// wait for threads, check pthread join success
-	for (int i = 0; i < 3; i++) {
+	for (int i = 0; i < threads_len; i++) {
 		int ths; // return value
 		int pjs = pthread_join(threads[i], (void *) &ths);
 		if (pjs) {
