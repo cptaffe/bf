@@ -10,21 +10,18 @@
 
 #include "lex.h"
 #include "parse.h"
-#include "bytecode.h"
+#include "jit.h"
 #include "lex_funcs.h"
 #include "bf.h"
 #include "tok.h"
 
 int main(int argc, char **argv) {
-
-	FILE *file;
+	FILE *file = stdin;
 
 	// argument checking
 	if (argc > 2) {
 		// print usage instructions on improper usage
 		fprintf(stderr, "usage: bf <file>\n");
-	} else if (argc == 1) {
-		file = stdin;
 	} else if (argc == 2) {
 		file = fopen(argv[1], "r");
 		if (file == NULL) {
@@ -33,7 +30,7 @@ int main(int argc, char **argv) {
 	}
 
 	// init lexer
-	lex *l __attribute__((cleanup(lex_free_c))) = lex_init(10, stdin, bf_lex_all);
+	lex *l __attribute__((cleanup(lex_free_c))) = lex_init(10, file, bf_lex_all);
 	if (l == NULL) {
 		fail("lex alloc failed: %s.", strerror(errno));
 	}
@@ -51,11 +48,9 @@ int main(int argc, char **argv) {
 	}
 
 	// init jit
-	int bfcfd = open("out.bfc", O_CREAT | O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-	if (bfcfd < 0) { fail("out.bfc open failed: %s.", strerror(errno)); }
-	bf_bc *b __attribute__((cleanup(bf_bc_free_c))) = bf_bc_init(p->out, bfcfd);
-	if (b == NULL) {
-		fail("bc alloc failed: %s.", strerror(errno));
+	bf_jit *j __attribute__((cleanup(bf_jit_free_c))) = bf_jit_init(p->out);
+	if (j == NULL) {
+		fail("j alloc failed: %s.", strerror(errno));
 	}
 
 	// lexer state machine thread, check lex_state_threadable create success
@@ -72,13 +67,13 @@ int main(int argc, char **argv) {
 	}
 
 	// btecode emittance
-	int bcs = pthread_create(&threads[1], NULL, bf_bc_threadable, (void *) b);
-	if (bcs) {
+	int jcs = pthread_create(&threads[1], NULL, bf_jit_threadable, (void *) j);
+	if (jcs) {
 		fail("creating bf_jit_threadable thread failed: %s.", strerror(pcs));
 	}
 
 	// wait for threads, check pthread join success
-	for (int i = 0; i < 2; i++) {
+	for (int i = 0; i < 3; i++) {
 		int ths; // return value
 		int pjs = pthread_join(threads[i], (void *) &ths);
 		if (pjs) {
