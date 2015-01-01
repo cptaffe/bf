@@ -14,6 +14,8 @@
 #include "bf.h"
 #include "tok.h"
 
+#define THREADS 2
+
 int main(int argc, char **argv) {
 	FILE *file = stdin;
 
@@ -47,8 +49,7 @@ int main(int argc, char **argv) {
 	}
 
 	// lexer state machine thread, check lex_state_threadable create success
-	const int threads_len = 2;
-	pthread_t threads[threads_len];
+	pthread_t threads[THREADS] = {0};
 	int lstcs = pthread_create(&threads[0], NULL, lex_state_threadable, (void *) l);
 	if (lstcs) {
 		fail("creating lex_state_threadable thread failed: %s.", strerror(lstcs));
@@ -61,12 +62,12 @@ int main(int argc, char **argv) {
 	}
 
 	// wait for threads, check pthread join success
-	for (int i = 0; i < threads_len; i++) {
+	for (int i = 0; i < THREADS; i++) {
 		int ths; // return value
 		int pjs = pthread_join(threads[i], (void *) &ths);
 		if (pjs) {
 			// TODO: why does pthread[1] fail with "No such process"?
-			// err("joining pthread #%d thread failed: %s.", i, strerror(pjs));
+			err("joining pthread #%d thread failed: %s.", i, strerror(pjs));
 		} else if (ths) {
 			err("pthread returned error code %d.", ths);
 		}
