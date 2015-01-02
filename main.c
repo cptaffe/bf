@@ -16,6 +16,8 @@
 
 #define THREADS 2
 
+#define err_fail(...) char *__errstr = strerror(errno); err(__VA_ARGS__, __errstr); free(__errstr); return EXIT_FAILURE;
+
 int main(int argc, char **argv) {
 	FILE *file = stdin;
 
@@ -26,39 +28,39 @@ int main(int argc, char **argv) {
 	} else if (argc == 2) {
 		file = fopen(argv[1], "r");
 		if (file == NULL) {
-			fail("file open failed: %s.", strerror(errno));
+			err_fail("file open failed: %s.");
 		}
 	}
 
 	// init lexer
-	lex *l __attribute__((cleanup(lex_free_c))) = lex_init(10, file, bf_lex_all);
+	lex *l = lex_init(10, file, bf_lex_all);
 	if (l == NULL) {
-		fail("lex alloc failed: %s.", strerror(errno));
+		err_fail("lex alloc failed: %s.");
 	}
 
 	// init lex data
 	l->data = (void *) bf_lex_data_init();
 	if (l->data == NULL) {
-		fail("lex_data alloc failed: %s.", strerror(errno));
+		err_fail("lex_data alloc failed: %s.");
 	}
 
 	// init jit
-	bf_jit *j __attribute__((cleanup(bf_jit_free_c))) = bf_jit_init(((bf_lex_data *) l->data)->st);
+	bf_jit *j = bf_jit_init(((bf_lex_data *) l->data)->st);
 	if (j == NULL) {
-		fail("j alloc failed: %s.", strerror(errno));
+		err_fail("j alloc failed: %s.");
 	}
 
 	// lexer state machine thread, check lex_state_threadable create success
 	pthread_t threads[THREADS] = {0};
 	int lstcs = pthread_create(&threads[0], NULL, lex_state_threadable, (void *) l);
 	if (lstcs) {
-		fail("creating lex_state_threadable thread failed: %s.", strerror(lstcs));
+		err_fail("creating lex_state_threadable thread failed: %s.");
 	}
 
 	// jit machine
 	int jcs = pthread_create(&threads[1], NULL, bf_jit_threadable, (void *) j);
 	if (jcs) {
-		fail("creating bf_jit_threadable thread failed: %s.", strerror(jcs));
+		err_fail("creating bf_jit_threadable thread failed: %s.");
 	}
 
 	// wait for threads, check pthread join success
@@ -67,12 +69,18 @@ int main(int argc, char **argv) {
 		int pjs = pthread_join(threads[i], (void *) &ths);
 		if (pjs) {
 			// TODO: why does pthread[1] fail with "No such process"?
-			err("joining pthread #%d thread failed: %s.", i, strerror(pjs));
+			char *err = strerror(pjs);
+			err("joining pthread #%d thread failed: %s.", i, err);
+			free(err);
+			return EXIT_FAILURE;
 		} else if (ths) {
 			err("pthread returned error code %d.", ths);
+			return EXIT_FAILURE;
 		}
 	}
 
 	// free lex data
+	bf_jit_free(j);
+	lex_free(l);
 	bf_lex_data_free(l->data);
 }

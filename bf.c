@@ -12,7 +12,7 @@ static char *format(char *fmt) {
 		return NULL; // error
 	} else {
 		// add one for newline
-		char *msg = malloc(len + 1);
+		char *msg = malloc(len + 2);
 
 		if (msg == NULL) {
 			return NULL; // error
@@ -35,29 +35,6 @@ static char *format(char *fmt) {
 }
 
 // takes a string message, prints it to stderr,
-// then exits the process with a failure.
-void bf_fail(char *fmt, ...)  {
-
-	// handle failure message
-	va_list args;
-	va_start (args, fmt);
-
-	char *msg;
-	if ((msg = format(fmt)) == NULL) {
-		fprintf(stderr, "fail: formatting of error message failed\n.");
-		va_end(args);
-	} else {
-		// print error.
-		vfprintf (stderr, msg, args);
-		va_end (args);
-		free(msg);
-	}
-
-	// exit unhappily.
-	exit(EXIT_FAILURE);
-}
-
-// takes a string message, prints it to stderr,
 void bf_err(char *fmt, ...) {
 
 	// handle failure message
@@ -73,5 +50,22 @@ void bf_err(char *fmt, ...) {
 		vfprintf (stderr, msg, args);
 		va_end (args);
 		free(msg);
+	}
+}
+
+void bf_err_stat(char *file, char *func, int line, char *fmt, ...) {
+	va_list ap;
+	char *str;
+	va_start(ap, fmt);
+	int asret = vasprintf(&str, fmt, ap);
+	va_end(ap);
+
+	if (!(asret < 0)) {
+		#ifdef DEBUG
+		bf_err("%s:%d::%s: %s", file, line, func, str);
+		#else
+		bf_err("%s: %s", func, str);
+		#endif
+		free(str);
 	}
 }

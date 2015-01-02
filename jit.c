@@ -35,6 +35,9 @@ bf_jit *bf_jit_init(bf_stack *st) {
 	j->loop_count = 0;
 	j->runnable = false;
 
+	j->mem_mod = 0;
+	j->mem_disp = 0;
+
 	j->st = st;
 	if (j->st == NULL) { return NULL; }
 
@@ -43,13 +46,21 @@ bf_jit *bf_jit_init(bf_stack *st) {
 
 	// allocate MEM_PAGES pages.
 	j->mem_pages = MEM_PAGES;
-	j->mem = mmap(NULL, MEM_PAGES * PAGESIZE, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
-	if (j->mem == MAP_FAILED) { return NULL; }
+	if ((j->mem = mmap(NULL,
+		MEM_PAGES * PAGESIZE,
+		PROT_READ | PROT_WRITE,
+		MAP_ANON | MAP_PRIVATE,
+		-1,
+		0)) == MAP_FAILED) { return NULL; }
 
 	// allocate EXEC_PAGES pages
 	j->exec_pages = EXEC_PAGES;
-	j->exec = mmap(NULL, EXEC_PAGES * PAGESIZE, PROT_EXEC | PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
-	if (j->exec == MAP_FAILED) { return NULL; }
+	if ((j->exec = mmap(NULL,
+		EXEC_PAGES * PAGESIZE,
+		PROT_EXEC | PROT_READ | PROT_WRITE,
+		MAP_ANON | MAP_PRIVATE,
+		-1,
+		0)) == MAP_FAILED) { return NULL; }
 
 	// purposeful fault
 	fprintf(stderr, "page size: %d.\n", PAGESIZE);
@@ -58,64 +69,90 @@ bf_jit *bf_jit_init(bf_stack *st) {
 }
 
 int bf_jit_free(bf_jit *j) {
-	int mus = munmap(j->exec, j->exec_pages * PAGESIZE);
-	if (mus) { return mus; }
 
-	mus = munmap(j->mem, j->mem_pages * PAGESIZE);
-	if (mus) { return mus; }
+	// unmap mmap'd regions
+	int err;
+	if ((err = munmap(j->exec, j->exec_pages * PAGESIZE))) { return err; }
+	if ((err = munmap(j->mem, j->mem_pages * PAGESIZE))) { return err; }
 
+	// free alloc'd regions
 	bf_stack_free(j->loop_st);
-
 	free(j);
+
 	return 0;
 }
 
-static void print_mem(bf_jit *j, int max) {
-	if (max < 0) { max = (j->mem_pages * PAGESIZE); }
-	char *str = malloc(100);
+static char *mem_print(void *mem, int beg, int end, char *fmt) {
+	size_t alloc_len = 10;
+	char *str = malloc(alloc_len);
 	int len = 0;
-	for (int i = 0; i < max; i++) {
-		char *mem;
-		if (i == (max - 1)) {
-			asprintf(&mem, "%d", j->mem[i]);
-		} else {
-			asprintf(&mem, "%d, ", j->mem[i]);
+	for (int i = beg; i < end; i++) {
+
+		// format fmt
+		char *s = NULL;
+		if (i != (end - 1)) {
+			if (asprintf(&s, "%s, ", fmt) < 0) { return NULL; } // asprintf failed
+		} else { s = fmt; }
+
+		// print
+		char *a_str = NULL;
+		int ret = asprintf(&a_str, s, ((uint8_t *) mem)[i]);
+		if (ret < 0) { return NULL; } // asprintf failed.
+
+		// reallocate to size
+		if (alloc_len < (len + ret)) {
+			alloc_len = len + ret;
+			if (!(str = realloc(str, alloc_len))) { return NULL; }
 		}
-		memcpy(&str[len], mem, strlen(mem));
-		len += strlen(mem);
+
+		// copy
+		memcpy(&str[len], a_str, ret);
+		free(a_str); a_str = NULL;
+		len += ret;
 	}
-	err("mem: { %s }.", str);
+
+	// null terminate
+	alloc_len++;
+	if (!(str = realloc(str, alloc_len))) { return NULL; }
+	str[alloc_len - 1] = 0; // null
+
+	return str; // return string.
 }
 
-static void print_exec(bf_jit *j) {
-	char *str = malloc(100);
-	int len = 0;
-	int max = j->exec_pos;
-	for (int i = 0; i < max; i++) {
-		char *mem;
-		if (i == (max - 1)) {
-			asprintf(&mem, "%x", j->exec[i]);
-		} else {
-			asprintf(&mem, "%x, ", j->exec[i]);
-		}
-		memcpy(&str[len], mem, strlen(mem));
-		len += strlen(mem);
-	}
+static inline void print_mem(bf_jit *j, int max) {
+	// print to string
+	char *str = mem_print(j->mem, 0,
+	(max == 0 ? ((j->mem_pages * PAGESIZE) - 1): max), "%d");
+
+	if (str == NULL) { return; } // mem_print failed
+	err("mem: { %s }.", str);
+	free(str); // free str
+}
+
+static inline void print_exec(bf_jit *j) {
+	if (j->exec_pos == 0) { return; } // nothing to print
+
+	// print to string
+	char *str = mem_print(j->exec, 0, j->exec_pos, "%d");
+
+	if (str == NULL) { return; } // mem_print failed
 	err("exec: { %s }.", str);
+	free(str);
 }
 
 // TODO: add/sub instructions should not rollover 4 bytes.
 
 // actually emit code for program
-static void emit_prog(bf_jit *j) {
+static inline void emit_prog(bf_jit *j) {
 	// check if something to do
 	if (!j->mem_mod && !j->mem_disp) { return; }
 
-	// if mem_mod needs coding
+	// if mem_mod is non-zero
 	if (j->mem_mod > 0) { emit_add(j, j->mem_mod); }
 	else if (j->mem_mod < 0) { emit_sub(j, j->mem_mod); }
 	j->mem_mod = 0;
 
+	// if mem_disp is non-zero
 	if (j->mem_disp > 0) { emit_add_rsi(j, j->mem_disp); }
 	else if (j->mem_disp < 0) { emit_sub_rsi(j, j->mem_disp); }
 	j->mem_disp = 0;
@@ -196,6 +233,9 @@ void *bf_jit_threadable(void *v) {
 			err("bf_bc_emit returned error code %ld.", s);
 			return (void *) s;
 		}
+
+		// free tok
+		bf_tok_free(t);
 
 		// run if runnable
 		if (j->runnable) {
