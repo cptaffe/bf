@@ -61,11 +61,7 @@ void bf_err_stat(char *file, char *func, int line, char *fmt, ...) {
 	va_end(ap);
 
 	if (!(asret < 0)) {
-		#ifdef DEBUG
 		bf_err("%s:%d::%s: %s", file, line, func, str);
-		#else
-		bf_err("%s: %s", func, str);
-		#endif
 		free(str);
 	}
 }
