@@ -126,7 +126,7 @@ static inline void print_mem(bf_jit *j, int max) {
 
 	if (str == NULL) { return; } // mem_print failed
 	err("mem: { %s }.", str);
-	free(str); // free str
+	free(str);
 }
 
 static inline void print_exec(bf_jit *j) {
@@ -148,13 +148,11 @@ static inline void emit_prog(bf_jit *j) {
 	if (!j->mem_mod && !j->mem_disp) { return; }
 
 	// if mem_mod is non-zero
-	if (j->mem_mod > 0) { emit_add(j, j->mem_mod); }
-	else if (j->mem_mod < 0) { emit_sub(j, j->mem_mod); }
+	if (j->mem_mod != 0) { emit_add(j, j->mem_mod); }
 	j->mem_mod = 0;
 
 	// if mem_disp is non-zero
-	if (j->mem_disp > 0) { emit_add_rsi(j, j->mem_disp); }
-	else if (j->mem_disp < 0) { emit_sub_rsi(j, j->mem_disp); }
+	if (j->mem_disp != 0) { emit_add_rsi(j, j->mem_disp); }
 	j->mem_disp = 0;
 }
 
