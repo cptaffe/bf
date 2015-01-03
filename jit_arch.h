@@ -17,7 +17,7 @@
 #define MOV_AX_64 0x48, 0xb8 /* mov <8 bytes>, %rdi */
 
 // add
-#define ADD_LIT8 0x66, 0x83, 0x06 /* add <1 byte>, (%rsi) */
+#define ADD_LIT8 0x80, 0x06 /* add <1 byte>, (%rsi) */
 #define ADD_LIT8_LOCK 0xf0, ADD_LIT8 /* add <1 byte>, (%rsi) (locking) */
 #define ADD_LIT8_SI 0x48, 0x83, 0xc6 /* add <1 byte>, %rsi */
 #define ADD_LIT8_SI_LOCK 0xf0, ADD_LIT8 /* add <1 byte>, %rsi (locking) */

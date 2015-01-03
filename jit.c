@@ -154,7 +154,7 @@ static inline void emit_prog(bf_jit *j) {
 
 	// if mem_disp is non-zero
 	// 16 bit scaling
-	if (j->mem_disp != 0) { emit_add_rsi(j, 2 * j->mem_disp); }
+	if (j->mem_disp != 0) { emit_add_rsi(j, j->mem_disp); }
 	j->mem_disp = 0;
 }
 
