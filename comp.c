@@ -41,6 +41,8 @@ int bf_comp_free(bf_comp *c) {
 	bf_lex_data_free(c->l->data);
 	lex_free(c->l);
 
+	free(c);
+
 	return 0;
 }
 

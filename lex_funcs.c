@@ -27,6 +27,7 @@ bf_lex_data *bf_lex_data_init() {
 }
 
 void bf_lex_data_free(bf_lex_data *l) {
+	while (!bf_stack_empty(l->st)) { bf_tok_free(bf_stack_pop(l->st)); }
 	bf_stack_free(l->st);
 	free(l);
 }

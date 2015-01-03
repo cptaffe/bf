@@ -76,6 +76,10 @@ int bf_jit_free(bf_jit *j) {
 	if ((err = munmap(j->exec, j->exec_pages * PAGESIZE))) { return err; }
 	if ((err = munmap(j->mem, j->mem_pages * PAGESIZE))) { return err; }
 
+	// empty stack.
+	while (!bf_stack_empty(j->st)) { bf_tok_free(bf_stack_pop(j->st)); }
+	while (!bf_stack_empty(j->loop_st)) { bf_stack_pop(j->loop_st); }
+
 	// free alloc'd regions
 	bf_stack_free(j->loop_st);
 	free(j);
@@ -91,14 +95,18 @@ static char *mem_print(void *mem, int beg, int end, char *fmt) {
 
 		// format fmt
 		char *s = NULL;
+		bool fr = false;
 		if (i != (end - 1)) {
 			if (asprintf(&s, "%s, ", fmt) < 0) { return NULL; } // asprintf failed
+			fr = true;
 		} else { s = fmt; }
 
 		// print
 		char *a_str = NULL;
 		int ret = asprintf(&a_str, s, ((uint8_t *) mem)[i]);
 		if (ret < 0) { return NULL; } // asprintf failed.
+
+		if (fr) { free(s); }
 
 		// reallocate to size
 		if (alloc_len < (len + ret)) {
