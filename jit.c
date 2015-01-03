@@ -29,7 +29,6 @@ bf_jit *bf_jit_init(bf_stack *st) {
 	bf_jit *j = malloc(sizeof(bf_jit));
 	if (j == NULL) { return NULL; }
 
-	j->si = 0;
 	j->init_pos = 0;
 	j->exec_pos = 0;
 	j->loop_count = 0;
@@ -52,6 +51,8 @@ bf_jit *bf_jit_init(bf_stack *st) {
 		MAP_ANON | MAP_PRIVATE,
 		-1,
 		0)) == MAP_FAILED) { return NULL; }
+
+	j->si = (int64_t) (intptr_t) j->mem;
 
 	// allocate EXEC_PAGES pages
 	j->exec_pages = EXEC_PAGES;
@@ -133,7 +134,7 @@ static inline void print_exec(bf_jit *j) {
 	if (j->exec_pos == 0) { return; } // nothing to print
 
 	// print to string
-	char *str = mem_print(j->exec, 0, j->exec_pos, "%d");
+	char *str = mem_print(j->exec, 0, j->exec_pos, "0x%x");
 
 	if (str == NULL) { return; } // mem_print failed
 	err("exec: { %s }.", str);
@@ -152,7 +153,8 @@ static inline void emit_prog(bf_jit *j) {
 	j->mem_mod = 0;
 
 	// if mem_disp is non-zero
-	if (j->mem_disp != 0) { emit_add_rsi(j, j->mem_disp); }
+	// 16 bit scaling
+	if (j->mem_disp != 0) { emit_add_rsi(j, 2 * j->mem_disp); }
 	j->mem_disp = 0;
 }
 
@@ -180,21 +182,21 @@ int bf_jit_emit(bf_jit *j, bf_tok *t) {
 			err("unsupported as of yet.");
 		} else if (t->type == BF_TOK_LB) {
 			j->loop_count++;
-			bf_stack_push(j->loop_st, (void *) (intptr_t) j->exec_pos);
+			bf_stack_push(j->loop_st, (void *) (intptr_t) &j->exec_pos);
 		} else if (t->type == BF_TOK_RB) {
 			j->loop_count--;
 			if (j->loop_count < 0) { return 1; }
 			int num = (int) (intptr_t) bf_stack_pop(j->loop_st);
 			// emit only if looping something
 			if (j->exec_pos - num) {
-				emit_mov_rsi_rcx(j); // move current to rcx
+				// emit_mov_rcx_rsi(j); // move current to rcx
 				emit_sub(j, 1); // decrement current
-				int diff = (num - j->exec_pos);
-				emit_loop(j, diff); // loop instruction
+				emit_loop(j, (j->exec_pos - num)); // loop instruction
 			}
 		} else if (t->type == BF_TOK_STE) {
 			// if there is something to run
 			if ((j->exec_pos - j->init_pos) && !j->loop_count) {
+				emit_save_ptr(j, &j->si);
 				emit_ret(j);
 				j->runnable = true;
 			}
@@ -237,9 +239,10 @@ void *bf_jit_threadable(void *v) {
 
 		// run if runnable
 		if (j->runnable) {
+			// emit ptr saving instructions
 			print_exec(j);
 			((void(*)()) j->exec)();
-			//emit_save_ptr(j);
+			err("pos is: %llx.", j->si);
 			j->runnable = false;
 			print_mem(j, 5);
 			j->exec_pos = 0; // reset

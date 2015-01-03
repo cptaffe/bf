@@ -18,7 +18,7 @@ typedef struct {
 	int exec_pages;
 	int mem_pages;
 	uint8_t *exec;
-	uint8_t *mem;
+	uint16_t *mem;
 
 	// incomint token stack
 	bf_stack *st;
