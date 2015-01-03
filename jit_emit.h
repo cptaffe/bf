@@ -99,11 +99,16 @@ static inline void emit_write(bf_jit *j, uint64_t fd) {
 	memcpy(&j->exec[j->exec_pos], syscall, sizeof(syscall));
 	j->exec_pos += sizeof(syscall);
 
-	emit_init(j); // fix syscall register death.
+	// fix syscall register death.
+	char mov3[] = {MOV_64};
+	memcpy(&j->exec[j->exec_pos], mov3, sizeof(mov3));
+	j->exec_pos += sizeof(mov3);
+	memcpy(&j->exec[j->exec_pos], &j->si, sizeof(j->si));
+	j->exec_pos += sizeof(j->si);
 }
 
+// save current storage index to ptr
 static inline void emit_save_ptr(bf_jit *j, uint64_t *ptr) {
-	err("am being called.");
 	// mov si to ax
 	char mov_si_ax[] = {MOV_SI_AX};
 	memcpy(&j->exec[j->exec_pos], mov_si_ax, sizeof(mov_si_ax));

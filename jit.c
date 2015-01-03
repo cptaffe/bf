@@ -126,7 +126,7 @@ static inline void print_mem(bf_jit *j, int max) {
 	(max == 0 ? ((j->mem_pages * PAGESIZE) - 1): max), "%d");
 
 	if (str == NULL) { return; } // mem_print failed
-	err("mem: { %s }.", str);
+	err("mem: { %s }[%llu].", str, j->si - ((intptr_t) j->mem));
 	free(str);
 }
 
@@ -182,16 +182,16 @@ int bf_jit_emit(bf_jit *j, bf_tok *t) {
 			err("unsupported as of yet.");
 		} else if (t->type == BF_TOK_LB) {
 			j->loop_count++;
-			bf_stack_push(j->loop_st, (void *) (intptr_t) &j->exec_pos);
+			bf_stack_push(j->loop_st, (void *) (intptr_t) j->exec_pos);
 		} else if (t->type == BF_TOK_RB) {
 			j->loop_count--;
 			if (j->loop_count < 0) { return 1; }
 			int num = (int) (intptr_t) bf_stack_pop(j->loop_st);
 			// emit only if looping something
 			if (j->exec_pos - num) {
-				// emit_mov_rcx_rsi(j); // move current to rcx
+				emit_mov_rcx_rsi(j); // move current to rcx
 				emit_sub(j, 1); // decrement current
-				emit_loop(j, (j->exec_pos - num)); // loop instruction
+				emit_loop(j, (num - j->exec_pos) - 2); // loop instruction
 			}
 		} else if (t->type == BF_TOK_STE) {
 			// if there is something to run
@@ -210,9 +210,6 @@ void *bf_jit_threadable(void *v) {
 	bf_jit *j = (bf_jit *) v;
 
 	emit_init(j); // init jit (first instructions)
-
-	err("exec: %p", j->exec);
-	err("mem: %p", j->exec);
 
 	while (bf_stack_alive(j->st) || !bf_stack_empty(j->st)) {
 
@@ -242,15 +239,11 @@ void *bf_jit_threadable(void *v) {
 			// emit ptr saving instructions
 			print_exec(j);
 			((void(*)()) j->exec)();
-			err("pos is: %llx.", j->si);
 			j->runnable = false;
 			print_mem(j, 5);
 			j->exec_pos = 0; // reset
 			emit_init(j); // init jit (first instructions)
 		}
-
-		// print ptr location
-		// err("ptr: %llu", j->si);
 	}
 
 	return NULL;
