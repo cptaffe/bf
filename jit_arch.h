@@ -22,12 +22,6 @@
 #define ADD_LIT8_SI 0x48, 0x83, 0xc6 /* add <1 byte>, %rsi */
 #define ADD_LIT8_SI_LOCK 0xf0, ADD_LIT8 /* add <1 byte>, %rsi (locking) */
 
-// subtract
-#define SUB_LIT8_SI 0x48, 0x83, 0xee /* sub <1 byte>, %rsi */
-#define SUB_LIT8_SI_LOCK 0xf0, ADD_LIT8 /* sub <1 byte>, %rsi (locking) */
-#define SUB_LIT8 0x66, 0x2e /* sub <1 byte>, (%rsi) */
-#define SUB_LIT8_LOCK 0xf0, SUB_LIT8 /* sub <1 byte>, (%rsi) (locking) */
-
 // special
 #define LOOP 0xe2 /* loop <1 byte offset> */
 #define SYSCALL 0x0f, 0x05 /* syscall */
