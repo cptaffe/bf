@@ -33,22 +33,6 @@ static inline void emit_add_rsi(bf_jit *j, uint8_t num) {
 	j->exec_pos += sizeof(num);
 }
 
-static inline void emit_sub_rsi(bf_jit *j, uint8_t num) {
-	char add[] = {SUB_LIT8_SI};
-	memcpy(&j->exec[j->exec_pos], add, sizeof(add));
-	j->exec_pos += sizeof(add);
-	memcpy(&j->exec[j->exec_pos], &num, sizeof(num));
-	j->exec_pos += sizeof(num);
-}
-
-static inline void emit_sub(bf_jit *j, uint8_t num) {
-	char add[] = {SUB_LIT8};
-	memcpy(&j->exec[j->exec_pos], add, sizeof(add));
-	j->exec_pos += sizeof(add);
-	memcpy(&j->exec[j->exec_pos], &num, sizeof(num));
-	j->exec_pos += sizeof(num);
-}
-
 static inline void emit_ret(bf_jit *j) {
 	char ret[] = {RET};
 	memcpy(&j->exec[j->exec_pos], ret, sizeof(ret));

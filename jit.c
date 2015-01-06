@@ -198,7 +198,7 @@ int bf_jit_emit(bf_jit *j, bf_tok *t) {
 			// emit only if looping something
 			if (j->exec_pos - num) {
 				emit_mov_rcx_rsi(j); // move current to rcx
-				emit_sub(j, 1); // decrement current
+				emit_add(j, -1); // decrement current
 				emit_loop(j, (num - j->exec_pos) - 2); // loop instruction
 			}
 		} else if (t->type == BF_TOK_STE) {
