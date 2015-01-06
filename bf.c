@@ -35,7 +35,7 @@ static char *format(char *fmt) {
 }
 
 // takes a string message, prints it to stderr,
-void bf_err(char *fmt, ...) {
+static void bf_err(char *fmt, ...) {
 
 	// handle failure message
 	va_list args;
@@ -47,7 +47,7 @@ void bf_err(char *fmt, ...) {
 		va_end(args);
 	} else {
 		// print error.
-		vfprintf (stderr, msg, args);
+		vfprintf(stderr, msg, args);
 		va_end (args);
 		free(msg);
 	}
