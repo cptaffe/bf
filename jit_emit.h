@@ -59,7 +59,7 @@ static inline void emit_write(bf_jit *j, uint64_t fd) {
 	char mov[] = {MOV_AX_64};
 	memcpy(&j->exec[j->exec_pos], mov, sizeof(mov));
 	j->exec_pos += sizeof(mov);
-	uint64_t n = 0x2000004;
+	uint64_t n = SYSCALL_WRITE;
 	memcpy(&j->exec[j->exec_pos], &n, sizeof(n));
 	j->exec_pos += sizeof(n);
 

@@ -2,10 +2,22 @@
 #ifndef BF_JIT_ARCH_H_
 #define BF_JIT_ARCH_H_
 
+// syscall numbers for each OS
+#ifdef __MACH__
+
+#define SYSCALL_WRITE 0x2000004
+
+#else
+#ifdef __linux__
+
+#define SYSCALL_WRITE 0x1
+
+#else
+#error unsupported operating system
+#endif // __linux__
+#endif // __MACH__
+
 // define instructions for each architecture.
-
-// x86 mod-r/m value tables:
-
 // x86_64 architecture
 #ifdef __x86_64__
 
