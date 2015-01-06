@@ -12,8 +12,10 @@ typedef struct {
 	bf_jit *j;
 } bf_comp;
 
-bf_comp *bf_comp_init(FILE *file);
-int bf_comp_free(bf_comp *c);
+bf_comp *bf_comp_init(FILE *file); // init compiler
+int bf_comp_free(bf_comp *c); // cleanup compiler
+
+// run compiler
 int bf_comp_run(bf_comp *c);
 
 #endif // BF_COMP_H_
