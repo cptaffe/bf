@@ -1,13 +1,14 @@
 
 CFLAGS+= -Wall -g -Ilex --std=c11 -D_GNU_SOURCE
-LNKFLAGS=-lpthread -lc
+LNKFLAGS=-pthread -lc
 
 SRC = main.c bf.c lex_funcs.c tok.c stack.c lex_threadable.c jit.c link.c comp.c
 OBJ = $(SRC:.c=.o)
 HDR = bf.h tok.h lex_funcs.h tok.h stack.h lex_threadable.h jit.h link.h jit_arch.h jit_emit.h comp.h
 LIB = lex/lex.a
 
-LOG = log.txt # testing log
+# testing log
+LOG = log.txt
 
 BIN = bf
 
