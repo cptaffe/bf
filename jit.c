@@ -63,9 +63,6 @@ bf_jit *bf_jit_init(bf_stack *st) {
 		-1,
 		0)) == MAP_FAILED) { return NULL; }
 
-	// purposeful fault
-	fprintf(stderr, "page size: %d.\n", PAGESIZE);
-
 	return j;
 }
 

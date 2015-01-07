@@ -31,8 +31,9 @@ int main(int argc, char **argv) {
 	if (!c) { return 1; }
 
 	// run compiler
-	if (bf_comp_run(c)) {
-		err("bf_comp_run failed miserably");
+	int err;
+	if ((err = bf_comp_run(c))) {
+		err("bf_comp_run failed (%d)", err);
 	}
 
 	// cleanup compiler

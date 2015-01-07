@@ -68,5 +68,5 @@ int bf_comp_run(bf_comp *c) {
 			return 4;
 		}
 	}
-	return 5;
+	return 0;
 }

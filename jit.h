@@ -18,21 +18,21 @@ typedef struct {
 	int exec_pages;
 	int mem_pages;
 	uint8_t *exec;
-	uint16_t *mem;
+	uint8_t *mem;
 
-	// incomint token stack
+	// incoming token stack
 	bf_stack *st;
 
 	// loop handling
-	int loop_count;
-	bf_stack *loop_st;
+	int loop_count; // current loop depth
+	bf_stack *loop_st; // exec pos stack for loop generation
+
+	// to be generated program
+	int mem_disp; // memory disp.
+	int mem_mod; // +/- on memory
 
 	// if code is runnable
 	bool runnable;
-
-	// to be generated program
-	int mem_disp; // memory displacement
-	int mem_mod; // memory modification
 
 	// program state
 	uint64_t si; // source index
