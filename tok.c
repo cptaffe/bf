@@ -7,8 +7,8 @@
 #include "bf.h" // err
 
 // init a token, returns allocated token or null.
-bf_tok *bf_tok_init(int type, char *msg) {
-	bf_tok *t = malloc(sizeof(bf_tok));
+bf_tok *bf_tok_init(bf_tok_type_t type, char *msg) {
+	bf_tok *t = (bf_tok *) malloc(sizeof(bf_tok));
 	if (t == NULL) {
 		return NULL;
 	} else {

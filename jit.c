@@ -131,7 +131,7 @@ static inline void print_mem(bf_jit *j, int max) {
 	(max == 0 ? ((j->mem_pages * PAGESIZE) - 1): max), "%d");
 
 	if (str == NULL) { return; } // mem_print failed
-	err("mem: { %s }[%llu].", str, j->si - ((intptr_t) j->mem));
+	printf("mem: { %s }[%llu].\n", str, j->si - ((intptr_t) j->mem));
 	free(str);
 }
 
@@ -142,11 +142,9 @@ static inline void print_exec(bf_jit *j) {
 	char *str = mem_print(j->exec, 0, j->exec_pos, "0x%x");
 
 	if (str == NULL) { return; } // mem_print failed
-	err("exec: { %s }.", str);
+	printf("exec: { %s }.\n", str);
 	free(str);
 }
-
-// TODO: add/sub instructions should not rollover 4 bytes.
 
 // actually emit code for program
 static inline void emit_prog(bf_jit *j) {
@@ -158,7 +156,6 @@ static inline void emit_prog(bf_jit *j) {
 	j->mem_mod = 0;
 
 	// if mem_disp is non-zero
-	// 16 bit scaling
 	if (j->mem_disp != 0) { emit_add_rsi(j, j->mem_disp); }
 	j->mem_disp = 0;
 }
@@ -193,10 +190,10 @@ int bf_jit_emit(bf_jit *j, bf_tok *t) {
 			if (j->loop_count < 0) { return 1; }
 			int num = (int) (intptr_t) bf_stack_pop(j->loop_st);
 			// emit only if looping something
-			if (j->exec_pos - num) {
+			if (j->exec_pos > num) {
 				emit_mov_rcx_rsi(j); // move current to rcx
 				emit_add(j, -1); // decrement current
-				emit_loop(j, (num - j->exec_pos) - 2); // loop instruction
+				emit_loop(j, (num - j->exec_pos)); // loop instruction
 			}
 		} else if (t->type == BF_TOK_STE) {
 			// if there is something to run

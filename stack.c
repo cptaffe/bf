@@ -18,7 +18,7 @@ static inline int mut_cond_get(bf_stack *stk) {
 // initialize stack
 bf_stack *bf_stack_init() {
 	// alloc
-	bf_stack *stk = malloc(sizeof(bf_stack));
+	bf_stack *stk = (bf_stack *) malloc(sizeof(bf_stack));
 	if (stk == NULL) { return NULL; }
 
 	stk->good = true; // it lives.

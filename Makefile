@@ -14,33 +14,21 @@ BIN = bf
 
 all: $(BIN) test
 
+%.o: %.c
+	$(CC) $(CFLAGS) -c $<
+
 $(BIN): $(OBJ) $(LIB)
 	$(CC) $(CFLAGS) $(LNKFLAGS) -o $(BIN) $(OBJ) $(LIB)
 
 # accurate listing of dependencies. This can be avoided by uncommenting
 # the following line, but this way it will only remake affected files.
-# $(OBJ): $(HDR)
-
-main.o: comp.h bf.h
-comp.o: lex_funcs.h bf.h
-comp.h: lex/lex.h jit.h
-bf.o: bf.h
-bf.h: stack.h
-tok.o: tok.h
-lex_funcs.o: lex_funcs.h
-lex_funcs.h: bf.h lex/lex.h
-lex_threadable.o: lex_threadable.h
-stack.o: stack.h
-jit.o: jit.h jit_emit.h bf.h
-jit.h: tok.h stack.h
-jit_emit.h: jit_arch.h jit.h
-link.o: link.h
+$(OBJ): $(HDR)
 
 $(LIB):
 	$(MAKE) -C $(dir $(LIB))
 
 clean:
-	rm $(BIN) $(OBJ)
+	$(RM) $(BIN) $(OBJ)
 	$(MAKE) clean -C $(dir $(LIB))
 
 test:

@@ -46,6 +46,7 @@ static inline void emit_mov_rcx_rsi(bf_jit *j) {
 }
 
 static inline void emit_loop(bf_jit *j, uint8_t num) {
+	err("loop: %d", (int8_t) num);
 	char loop[] = {LOOP};
 	memcpy(&j->exec[j->exec_pos], loop, sizeof(loop));
 	j->exec_pos += sizeof(loop);

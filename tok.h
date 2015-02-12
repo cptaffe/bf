@@ -19,7 +19,7 @@ typedef struct {
 	char *msg;
 } bf_tok;
 
-bf_tok *bf_tok_init(int type, char *msg);
+bf_tok *bf_tok_init(bf_tok_type_t type, char *msg);
 void bf_tok_free(bf_tok *t);
 
 #endif // BF_TOK_H_

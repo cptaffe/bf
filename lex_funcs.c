@@ -12,7 +12,7 @@
 #define IS_NEWLINE(c) (c == '\n')
 
 bf_lex_data *bf_lex_data_init() {
-	bf_lex_data *l = malloc(sizeof (bf_lex_data));
+	bf_lex_data *l = (bf_lex_data *) malloc(sizeof (bf_lex_data));
 	if (l == NULL) {
 		return NULL;
 	} else {
@@ -27,7 +27,7 @@ bf_lex_data *bf_lex_data_init() {
 }
 
 void bf_lex_data_free(bf_lex_data *l) {
-	while (!bf_stack_empty(l->st)) { bf_tok_free(bf_stack_pop(l->st)); }
+	while (!bf_stack_empty(l->st)) { bf_tok_free((bf_tok *) bf_stack_pop(l->st)); }
 	bf_stack_free(l->st);
 	free(l);
 }
@@ -119,7 +119,7 @@ void *bf_lex_op(lex *l) {
 				bf_lex_tok_push(l, t);
 
 				// return to the default state.
-				return bf_lex_all;
+				return (void *) bf_lex_all;
 			}
 		}
 	}
@@ -165,7 +165,7 @@ void *bf_lex_loop(lex *l) {
 				}
 				bf_lex_tok_push(l, t);
 
-				return bf_lex_all;
+				return (void *) bf_lex_all;
 			} else if (c == ']') {
 
 				// acknowledge loop end
@@ -191,7 +191,7 @@ void *bf_lex_loop(lex *l) {
 				}
 				bf_lex_tok_push(l, t);
 
-				return bf_lex_all;
+				return (void *) bf_lex_all;
 			} else {
 				return NULL; // should never reach
 			}
@@ -241,7 +241,7 @@ void *bf_lex_newline(lex *l) {
 		}
 		bf_lex_tok_push(l, t);
 
-		return bf_lex_all;
+		return (void *) bf_lex_all;
 	} else {
 
 		// note error
@@ -261,11 +261,11 @@ void *bf_lex_all(lex *l) {
 	while ((c = lex_peek(l)) >= 0) {
 		// looks for a lexable character
 		if (IS_OP(c)) {
-			return bf_lex_op;
+			return (void *) bf_lex_op;
 		} else if (IS_LOOP(c)) {
-			return bf_lex_loop;
+			return (void *) bf_lex_loop;
 		} else if (IS_NEWLINE(c)) {
-			return bf_lex_newline;
+			return (void *) bf_lex_newline;
 		} else {
 			// ignores unknown characters
 			if (lex_next(l) < 0) { return NULL; } // error
